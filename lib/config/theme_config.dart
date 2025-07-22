@@ -6,17 +6,19 @@ class ThemeConfig {
     primaryColor: Color(0xFF143A37),
     scaffoldBackgroundColor: Color(0xFF143A37),
     appBarTheme: AppBarTheme(
-      backgroundColor: Color(0xFF143A37),
-      titleTextStyle: TextStyle(color: Colors.white, fontSize: 20),
+      backgroundColor: Colors.white,
+      titleTextStyle: TextStyle(color: Colors.black, fontSize: 20),
+      toolbarTextStyle: TextStyle(color: Colors.black),
+      iconTheme: IconThemeData(color: Colors.black),
     ),
     textTheme: TextTheme(
-      bodyLarge: TextStyle(color: Colors.white),
-      bodyMedium: TextStyle(color: Colors.white70),
+      bodyLarge: TextStyle(color: Colors.black),
+      bodyMedium: TextStyle(color: Colors.black54),
     ),
-    iconTheme: IconThemeData(color: Colors.white),
+    iconTheme: IconThemeData(color: Colors.black),
     colorScheme: ColorScheme.light(
       primary: Color(0xFF143A37),
-      secondary: Colors.yellow,
+      secondary: Color(0xFFEAAD21),
       onPrimary: Colors.white,
       onSecondary: Colors.black,
     ),
@@ -29,6 +31,8 @@ class ThemeConfig {
     appBarTheme: AppBarTheme(
       backgroundColor: Color(0xFF1E1E1E),
       titleTextStyle: TextStyle(color: Colors.white, fontSize: 20),
+      toolbarTextStyle: TextStyle(color: Colors.white),
+      iconTheme: IconThemeData(color: Colors.white),
     ),
     textTheme: TextTheme(
       bodyLarge: TextStyle(color: Colors.white),
@@ -37,7 +41,7 @@ class ThemeConfig {
     iconTheme: IconThemeData(color: Colors.white),
     colorScheme: ColorScheme.dark(
       primary: Color(0xFF143A37),
-      secondary: Colors.yellow,
+      secondary: Color(0xFFEAAD21),
       onPrimary: Colors.white,
       onSecondary: Colors.black,
     ),

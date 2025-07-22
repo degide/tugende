@@ -19,16 +19,23 @@ class _SplashScreenState extends State<SplashScreen> {
     //TODO: Initialize any necessary app state here, such as loading user preferences or checking authentication status.
     // For demonstration, we will just wait for 2 seconds before navigating to the WelcomeScreen
     await Future.delayed(Duration(seconds: 2));
-    Navigator.pushReplacementNamed(
-      context,
-      RouteNames.welcomeScreen,
-    );
+    if (mounted) {
+      Navigator.pushReplacementNamed(
+        context,
+        RouteNames.welcomeScreen,
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.primary,
+      appBar: AppBar(
+        toolbarHeight: 0,
+        backgroundColor: Colors.transparent,
+        iconTheme: IconThemeData(color: Colors.white),
+      ),
       body: SafeArea(
         child: Center(
           child: Row(
