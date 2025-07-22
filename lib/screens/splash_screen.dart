@@ -1,0 +1,66 @@
+import 'package:flutter/material.dart';
+import 'package:tugende/config/routes_config.dart';
+
+class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
+
+  @override
+  State<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _initAppState();
+  }
+
+  void _initAppState() async {
+    //TODO: Initialize any necessary app state here, such as loading user preferences or checking authentication status.
+    // For demonstration, we will just wait for 2 seconds before navigating to the WelcomeScreen
+    await Future.delayed(Duration(seconds: 2));
+    Navigator.pushReplacementNamed(
+      context,
+      RouteNames.welcomeScreen,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.primary,
+      body: SafeArea(
+        child: Center(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              RotatedBox(
+                quarterTurns: 3,
+                child: Text(
+                  'TUGENDE',
+                  style: TextStyle(
+                    fontSize: 70,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onPrimary,
+                  ),
+                ),
+              ),
+              RotatedBox(
+                quarterTurns: 3,
+                child: Text(
+                  'APP',
+                  style: TextStyle(
+                    fontSize: 70,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.secondary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
