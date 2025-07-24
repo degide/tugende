@@ -33,9 +33,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
   final CarouselSliderController _controller = CarouselSliderController();
 
   void _navigateToNext() async {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('TODO: Navigate to login screen or to home if logged in')),
-    );
+    Navigator.pushNamed(context, '/verification');
   }
 
   @override

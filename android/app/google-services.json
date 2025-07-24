@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "667168663477",
+    "project_id": "tugende-app",
+    "storage_bucket": "tugende-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:667168663477:android:abca0aa35f1a148551dbfc",
+        "android_client_info": {
+          "package_name": "com.example.tugende"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDmB9WY2d8H3bTnlKK1ddjZ-2GN1FSZDNw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
