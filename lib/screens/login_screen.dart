@@ -105,15 +105,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
+            children: [
               Text(
                 'Welcome back!',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
               ),
               SizedBox(height: 8),
               Text(
                 'Choose your identifier below to access your Tugende account!',
-                style: TextStyle(fontSize: 14, color: Colors.grey),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[800],
+                ),
               ),
             ],
           ),
