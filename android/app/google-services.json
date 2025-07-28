@@ -1,26 +1,43 @@
 {
   "project_info": {
-    "project_number": "667168663477",
-    "project_id": "tugende-app",
-    "storage_bucket": "tugende-app.firebasestorage.app"
+    "project_number": "517026597072",
+    "project_id": "tugende-14fee",
+    "storage_bucket": "tugende-14fee.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:667168663477:android:abca0aa35f1a148551dbfc",
+        "mobilesdk_app_id": "1:517026597072:android:253ab24372d18bab6d36d5",
         "android_client_info": {
           "package_name": "com.example.tugende"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "517026597072-0opfisfsoi6s7gh3124de0matqpk1287.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
-          "current_key": "AIzaSyDmB9WY2d8H3bTnlKK1ddjZ-2GN1FSZDNw"
+          "current_key": "AIzaSyCB0aTeYLeHsj3mBY4G6brpbq7ZvZq6MB4"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "517026597072-0opfisfsoi6s7gh3124de0matqpk1287.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "517026597072-9uhsl4pms5afchq28d88a1ieemknfp12.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.tugende"
+              }
+            }
+          ]
         }
       }
     }

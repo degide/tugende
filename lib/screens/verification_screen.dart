@@ -97,7 +97,7 @@ class _VerificationScreenState extends ConsumerState<VerificationScreen> {
     );
   }
 
-  Widget _buildSocialButton(String text, IconData icon, Color iconColor, {bool fill = false}) {
+  Widget _buildSocialButton(String text, IconData icon, Color iconColor) {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
