@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:tugende/screens/payment_method.dart';
 
 // Promos / Vouchers Screen
