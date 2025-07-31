@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:tugende/screens/payment_method.dart';
 
 // Promos / Vouchers Screen
@@ -163,7 +162,7 @@ class _PromosVouchersScreenState extends State<PromosVouchersScreen> {
                                   ),
                                 ),
                                 const SizedBox(width: 12),
-                                Container(
+                                SizedBox(
                                   height: 50,
                                   child: ElevatedButton(
                                     onPressed: _applyPromoCode,
