@@ -10,12 +10,21 @@ class HomeTab extends ConsumerStatefulWidget {
   ConsumerState<HomeTab> createState() => _HomeTabState();
 }
 
+enum StatType {
+  bookedRides,
+  dayStreak,
+  appliedPromos,
+  totalTips,
+}
+
 class _StatItem {
+  final StatType type;
   final int value;
   final String image;
   final String description;
 
   _StatItem({
+    required this.type,
     required this.value,
     required this.image,
     required this.description,
@@ -25,22 +34,26 @@ class _StatItem {
 class _HomeTabState extends ConsumerState<HomeTab> {
   final List<_StatItem> _statItems = [
     _StatItem(
-      value: 12,
+      type: StatType.bookedRides,
+      value: 0,
       image: 'assets/images/taxi_1.png',
       description: 'Booked Rides',
     ),
     _StatItem(
-      value: 7,
+      type: StatType.dayStreak,
+      value: 0,
       image: 'assets/images/taxi_2.png',
       description: 'Day Streak',
     ),
     _StatItem(
-      value: 5,
+      type: StatType.appliedPromos,
+      value: 0,
       image: 'assets/images/taxi_3.png',
       description: 'Applied Promos',
     ),
     _StatItem(
-      value: 10,
+      type: StatType.totalTips,
+      value: 0,
       image: 'assets/images/taxi_1.png',
       description: 'Total Tips',
     ),
