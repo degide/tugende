@@ -68,7 +68,7 @@ class _HomeTabState extends ConsumerState<HomeTab> {
           scrollDirection: Axis.vertical,
           physics: const ScrollPhysics(),
           child: Padding(
-            padding: const EdgeInsets.all(20.0),
+            padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
