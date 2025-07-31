@@ -420,7 +420,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           if (mounted && docSnapshots.docs.isNotEmpty) {
             final user = UserDocDto.fromJson(docSnapshots.docs.first.data());
             ref.read(userStateProvider.notifier).signInUser(user);
-            Navigator.pushReplacementNamed(context, RouteNames.homeScreen);
+            Navigator.pushNamedAndRemoveUntil(context, RouteNames.homeScreen, (route) => false);
           } else {
             if(mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -455,7 +455,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           if (mounted && docSnapshot.exists) {
             final user = UserDocDto.fromJson(docSnapshot.data()!);
             ref.read(userStateProvider.notifier).signInUser(user);
-            Navigator.pushReplacementNamed(context, RouteNames.homeScreen);
+            Navigator.pushNamedAndRemoveUntil(context, RouteNames.homeScreen, (route) => false);
           } else {
             if(mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -515,7 +515,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         if (mounted && docSnapshot.docs.isNotEmpty) {
           final user = UserDocDto.fromJson(docSnapshot.docs.first.data());
           ref.read(userStateProvider.notifier).signInUser(user);
-          Navigator.pushReplacementNamed(context, RouteNames.homeScreen);
+          Navigator.pushNamedAndRemoveUntil(context, RouteNames.homeScreen, (route) => false);
         }
       }
     } catch (e) {
@@ -582,7 +582,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         if (mounted && docSnapshot.exists) {
           final user = UserDocDto.fromJson(docSnapshot.data()!);
             ref.read(userStateProvider.notifier).signInUser(user);
-            Navigator.pushReplacementNamed(context, RouteNames.homeScreen);
+            Navigator.pushNamedAndRemoveUntil(context, RouteNames.homeScreen, (route) => false);
         }
       }
     } catch (e) {

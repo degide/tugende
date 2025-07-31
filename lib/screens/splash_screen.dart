@@ -50,7 +50,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
       if (mounted && docSnapshot.docs.isNotEmpty) {
         final user = UserDocDto.fromJson(docSnapshot.docs.first.data());
         ref.read(userStateProvider.notifier).signInUser(user);
-        Navigator.pushReplacementNamed(context, RouteNames.homeScreen);
+        Navigator.pushNamedAndRemoveUntil(context, RouteNames.homeScreen, (route) => false);
       }
       return;
     }
