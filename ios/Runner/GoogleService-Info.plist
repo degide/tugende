@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>517026597072-9uhsl4pms5afchq28d88a1ieemknfp12.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.517026597072-9uhsl4pms5afchq28d88a1ieemknfp12</string>
+	<key>API_KEY</key>
+	<string>AIzaSyAEseXW0Q46yy1c4Qcpz5Pkhixi03PatoE</string>
+	<key>GCM_SENDER_ID</key>
+	<string>517026597072</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.example.tugende</string>
+	<key>PROJECT_ID</key>
+	<string>tugende-14fee</string>
+	<key>STORAGE_BUCKET</key>
+	<string>tugende-14fee.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:517026597072:ios:83111903c86825da6d36d5</string>
+</dict>
+</plist>
