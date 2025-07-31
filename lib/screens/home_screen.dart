@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:tugende/screens/tabs/activity_tab.dart';
 import 'package:tugende/screens/tabs/bookings_tab.dart';
 import 'package:tugende/screens/tabs/home_tab.dart';
 import 'package:tugende/screens/tabs/profile_tab.dart';
@@ -34,11 +33,6 @@ class _HomeScreenState extends State<HomeScreen> {
       title: 'Bookings',
       icon: Icons.directions_car_filled_outlined,
       screen: const BookingsTab(),
-    ),
-    _TabItem(
-      title: 'Activity',
-      icon: Icons.history_outlined,
-      screen: const ActivityTab(),
     ),
     _TabItem(
       title: 'Profile',

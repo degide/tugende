@@ -80,7 +80,7 @@ class _HomeTabState extends ConsumerState<HomeTab> {
                   children: [
                     CircleAvatar(
                       radius: 30,
-                      backgroundImage: AssetImage('assets/icons/avatar.png'),
+                      backgroundImage: AssetImage('assets/images/avatar.png'),
                     ),
                     Expanded(
                       child: Column(

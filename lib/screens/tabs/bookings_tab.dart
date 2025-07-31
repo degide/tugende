@@ -12,7 +12,7 @@ class BookingsTab extends StatefulWidget {
 }
 
 class _BookingsTabState extends State<BookingsTab> {
-  late GoogleMapController _controller;
+  late GoogleMapController? _controller;
   final TextEditingController _fromController = TextEditingController();
   final TextEditingController _toController = TextEditingController();
 
@@ -88,12 +88,6 @@ class _BookingsTabState extends State<BookingsTab> {
     zoom: 12,
   );
 
-  @override
-  void initState() {
-    super.initState();
-    _checkLocationPermission();
-  }
-
   Future<void> _checkLocationPermission() async {
     // For development, skip permission check
     if (_skipPermissionForDev) {
@@ -124,7 +118,11 @@ class _BookingsTabState extends State<BookingsTab> {
       _selectedFromLocation = "Kigali, Rwanda";
     });
 
-    _controller.animateCamera(
+    if (_controller == null) {
+      return;
+    }
+
+    _controller?.animateCamera(
       CameraUpdate.newLatLng(_currentLocation!),
     );
   }
@@ -184,7 +182,10 @@ class _BookingsTabState extends State<BookingsTab> {
         _currentLocation = LatLng(position.latitude, position.longitude);
       });
 
-      _controller.animateCamera(
+      if (_controller == null) {
+        return;
+      }
+      _controller?.animateCamera(
         CameraUpdate.newLatLng(_currentLocation!),
       );
 
@@ -270,8 +271,12 @@ class _BookingsTabState extends State<BookingsTab> {
       _searchResults = [];
     });
 
+    if (_controller == null) {
+      return;
+    }
+
     // Move camera to selected location
-    _controller.animateCamera(
+    _controller?.animateCamera(
       CameraUpdate.newLatLng(
         LatLng(place.geometry.location.lat, place.geometry.location.lng),
       ),
@@ -301,7 +306,7 @@ class _BookingsTabState extends State<BookingsTab> {
 
   @override
   void dispose() {
-    _controller.dispose();
+    _controller?.dispose();
     _fromController.dispose();
     _toController.dispose();
     super.dispose();
@@ -319,6 +324,7 @@ class _BookingsTabState extends State<BookingsTab> {
               initialCameraPosition: _kKigali,
               onMapCreated: (GoogleMapController controller) {
                 _controller = controller;
+                _checkLocationPermission();
               },
               myLocationEnabled: _isLocationEnabled,
               myLocationButtonEnabled: false,
