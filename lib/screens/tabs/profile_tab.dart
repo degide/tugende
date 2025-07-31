@@ -1,11 +1,15 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:tugende/config/routes_config.dart';
+import 'package:tugende/providers/auth_provider.dart';
 
-class ProfileTab extends StatefulWidget {
+class ProfileTab extends ConsumerStatefulWidget {
   const ProfileTab({super.key});
 
   @override
-  State<ProfileTab> createState() => _ProfileTabState();
+  ConsumerState<ProfileTab> createState() => _ProfileTabState();
 }
 
 class _NavItem {
@@ -22,7 +26,7 @@ class _NavItem {
   });
 }
 
-class _ProfileTabState extends State<ProfileTab> {
+class _ProfileTabState extends ConsumerState<ProfileTab> {
   @override
   Widget build(BuildContext context) {
     final List<_NavItem> navItems = [
@@ -121,7 +125,7 @@ class _ProfileTabState extends State<ProfileTab> {
                           ),
                           IconButton(
                             icon: const Icon(Icons.logout),
-                            onPressed: _showLogoutDialog,
+                            onPressed: () => _showLogoutDialog(ref),
                           ),
                         ],
                       ),
@@ -229,6 +233,17 @@ class _ProfileTabState extends State<ProfileTab> {
     );
   }
 
+  void _logout(WidgetRef ref, BuildContext dialogContext) {
+    Navigator.of(dialogContext).pop();
+    try {
+      FirebaseAuth.instance.signOut();
+      GoogleSignIn.instance.signOut();
+    // ignore: empty_catches
+    } catch (e) {}
+    ref.read(userStateProvider.notifier).signOutUser();
+    Navigator.pushReplacementNamed(context, RouteNames.loginScreen);
+  }
+
   void _showChangePasswordDialog() {
     showDialog(
       context: context,
@@ -311,7 +326,7 @@ class _ProfileTabState extends State<ProfileTab> {
     );
   }
 
-  void _showLogoutDialog() {
+  void _showLogoutDialog(WidgetRef ref) {
     showDialog(
       context: context,
       builder: (context) {
@@ -346,7 +361,7 @@ class _ProfileTabState extends State<ProfileTab> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () => Navigator.of(context).pop(),
+                  onPressed: () => _logout(ref, context),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Theme.of(context).colorScheme.secondary,
                     foregroundColor: Colors.white,

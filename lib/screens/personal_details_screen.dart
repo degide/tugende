@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:tugende/config/routes_config.dart';
 
 // Providers for Firebase services
 final firebaseAuthProvider = Provider<FirebaseAuth>((ref) => FirebaseAuth.instance);
@@ -27,6 +28,7 @@ class _PersonalDetailsScreenState extends ConsumerState<PersonalDetailsScreen> {
   DateTime? _selectedDate;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  String? _uid;
 
   final List<String> _genderOptions = ['Male', 'Female', 'Other'];
 
@@ -37,6 +39,18 @@ class _PersonalDetailsScreenState extends ConsumerState<PersonalDetailsScreen> {
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    
+    // Fix: Properly handle the Map arguments
+    final arguments = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    
+    if (arguments != null) {
+      _uid = arguments['uid'] as String? ?? '';
+    }
   }
 
   Future<void> _selectDate(BuildContext context) async {
@@ -65,15 +79,30 @@ class _PersonalDetailsScreenState extends ConsumerState<PersonalDetailsScreen> {
       );
 
       final user = userCredential.user;
-      if (user != null) {
-        // Save user data to Firestore
-        await firestore.collection('users').doc(user.uid).set({
+      if (_uid != null && _uid!.isNotEmpty) {
+        await firestore.collection('users').doc(_uid).update({
+          'uid': _uid,
           'fullName': _fullNameController.text.trim(),
           'email': _emailController.text.trim(),
           'gender': _selectedGender,
           'dateOfBirth': _selectedDate?.toIso8601String(),
           'createdAt': FieldValue.serverTimestamp(),
           'emailVerified': false,
+          'isActive': true,
+          'profileCompleted': true,
+        });
+      } else if (user != null) {
+        // Save user data to Firestore
+        await firestore.collection('users').doc(user.uid).set({
+          'uid': user.uid,
+          'fullName': _fullNameController.text.trim(),
+          'email': _emailController.text.trim(),
+          'gender': _selectedGender,
+          'dateOfBirth': _selectedDate?.toIso8601String(),
+          'createdAt': FieldValue.serverTimestamp(),
+          'emailVerified': false,
+          'isActive': true,
+          'profileCompleted': true,
         });
 
         // Update user profile
@@ -84,7 +113,7 @@ class _PersonalDetailsScreenState extends ConsumerState<PersonalDetailsScreen> {
 
         // Navigate to email verification screen
         if (mounted) {
-          Navigator.pushNamed(context, '/email-verification');
+          Navigator.pushNamed(context, RouteNames.emailVerificationScreen);
         }
       }
     } on FirebaseAuthException catch (e) {

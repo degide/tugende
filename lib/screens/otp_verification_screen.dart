@@ -5,6 +5,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
 
+import 'package:tugende/config/routes_config.dart';
+
 // Separate state providers for different loading states
 final otpVerifyingProvider = StateProvider<bool>((ref) => false);
 final otpResendingProvider = StateProvider<bool>((ref) => false);
@@ -181,10 +183,12 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
       final userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
       await _createUserProfile(userCredential.user);
       
-      if (mounted) {
+      if (mounted && userCredential.user != null) {
         _showSnackBar('Phone verified successfully!');
-        // Navigate to next screen (e.g., profile setup or home)
-        Navigator.pushReplacementNamed(context, '/personal-details');
+        Navigator.pushReplacementNamed(context, RouteNames.personalDetailsScreen, arguments: {
+          'phoneNumber': phoneNumber,
+          'uid': userCredential.user?.uid,
+        });
       }
     } catch (e) {
       _showSnackBar('Sign-in failed: ${e.toString()}', isError: true);
@@ -214,8 +218,10 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
       } else {
         // Update existing user to mark phone as verified
         await userDoc.update({
+          'uid': user.uid,
           'isPhoneVerified': true,
           'lastUpdated': FieldValue.serverTimestamp(),
+          'isActive': true,
         });
       }
     } catch (e) {
