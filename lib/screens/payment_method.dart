@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:tugende/config/routes_config.dart';
+import 'package:tugende/providers/auth_provider.dart';
+import 'package:tugende/providers/bookings_provider.dart';
 
-class PaymentMethodScreen extends StatefulWidget {
+class PaymentMethodScreen extends ConsumerStatefulWidget {
   final String fromLocation;
   final String toLocation;
   final String driverName;
@@ -21,10 +24,10 @@ class PaymentMethodScreen extends StatefulWidget {
   });
 
   @override
-  State<PaymentMethodScreen> createState() => _PaymentMethodScreenState();
+  ConsumerState<PaymentMethodScreen> createState() => _PaymentMethodScreenState();
 }
 
-class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
+class _PaymentMethodScreenState extends ConsumerState<PaymentMethodScreen> {
   String? _selectedPaymentMethod;
 
   final List<PaymentMethod> _paymentMethods = [
@@ -90,8 +93,10 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
 
   Future<void> _saveBookingToFirestore() async {
     final FirebaseFirestore firestore = FirebaseFirestore.instance;
+    final user = ref.read(userStateProvider).user;
 
     final bookingData = {
+      'userId': user?.uid,
       'driverName': widget.driverName,
       'driverPictureUrl': widget.driverProfileImage,
       'fromLocation': widget.fromLocation,
@@ -104,6 +109,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
     };
 
     await firestore.collection('bookings').add(bookingData);
+    ref.invalidate(bookingsProvider(''));
   }
 
   void _showBookingConfirmationModal() {
