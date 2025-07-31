@@ -43,6 +43,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   }
 
   void _initAppState() async {
+    UserDocDto? user = await ref.read(userStateProvider.notifier).loadSavedUser();
     GoogleSignInAccount? googleUser = await _initializeGoogleSignIn();
     if (googleUser != null) {
       final userDoc = FirebaseFirestore.instance.collection('users').where('googleId', isEqualTo: googleUser.id);
@@ -53,8 +54,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
         Navigator.pushNamedAndRemoveUntil(context, RouteNames.homeScreen, (route) => false);
       }
       return;
-    }
-    else if (mounted) {
+    } else if (user != null) {
+      ref.read(userStateProvider.notifier).signInUser(user);
+      Navigator.pushNamedAndRemoveUntil(context, RouteNames.homeScreen, (route) => false);
+    } else if (mounted) {
       Navigator.pushReplacementNamed(
         context,
         RouteNames.welcomeScreen,

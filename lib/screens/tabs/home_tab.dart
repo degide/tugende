@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tugende/config/routes_config.dart';
 import 'package:tugende/providers/auth_provider.dart';
+import 'package:tugende/providers/bookings_provider.dart';
 
 class HomeTab extends ConsumerStatefulWidget {
   const HomeTab({super.key});
@@ -10,58 +11,58 @@ class HomeTab extends ConsumerStatefulWidget {
   ConsumerState<HomeTab> createState() => _HomeTabState();
 }
 
-enum StatType {
-  bookedRides,
-  dayStreak,
-  appliedPromos,
-  totalTips,
-}
+enum StatType { bookedRides, dayStreak, appliedPromos, totalTips }
 
 class _StatItem {
   final StatType type;
   final int value;
   final String image;
   final String description;
+  final Color? color;
 
   _StatItem({
     required this.type,
     required this.value,
     required this.image,
     required this.description,
+    this.color,
   });
 }
 
 class _HomeTabState extends ConsumerState<HomeTab> {
-  final List<_StatItem> _statItems = [
-    _StatItem(
-      type: StatType.bookedRides,
-      value: 0,
-      image: 'assets/images/taxi_1.png',
-      description: 'Booked Rides',
-    ),
-    _StatItem(
-      type: StatType.dayStreak,
-      value: 0,
-      image: 'assets/images/taxi_2.png',
-      description: 'Day Streak',
-    ),
-    _StatItem(
-      type: StatType.appliedPromos,
-      value: 0,
-      image: 'assets/images/taxi_3.png',
-      description: 'Applied Promos',
-    ),
-    _StatItem(
-      type: StatType.totalTips,
-      value: 0,
-      image: 'assets/images/taxi_1.png',
-      description: 'Total Tips',
-    ),
-  ];
-
   @override
   Widget build(BuildContext context) {
     final userState = ref.watch(userStateProvider);
+    final recentBookings = ref.watch(bookingsProvider(''));
+
+    final List<_StatItem> statItems = [
+      _StatItem(
+        type: StatType.bookedRides,
+        value: recentBookings.whenOrNull(data: (data) => data.length) ?? 0,
+        image: 'assets/icons/twemoji_racing-car.png',
+        description: 'Booked Rides',
+      ),
+      _StatItem(
+        type: StatType.dayStreak,
+        value: recentBookings.whenOrNull(data: (data) => data.length) ?? 0,
+        image: 'assets/icons/noto-v1_fire.png',
+        description: 'Day Streak',
+        color: Theme.of(context).colorScheme.secondary,
+      ),
+      _StatItem(
+        type: StatType.appliedPromos,
+        value: 0,
+        image: 'assets/icons/lsicon_badge-promotion-filled.png',
+        description: 'Applied Promos',
+        color: Theme.of(context).colorScheme.secondary,
+      ),
+      _StatItem(
+        type: StatType.totalTips,
+        value: 0,
+        image: 'assets/icons/noto_money-bag.png',
+        description: 'Total Tips',
+      ),
+    ];
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -70,7 +71,7 @@ class _HomeTabState extends ConsumerState<HomeTab> {
           scrollDirection: Axis.vertical,
           physics: const ScrollPhysics(),
           child: Padding(
-            padding: const EdgeInsets.all(20.0),
+            padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -133,56 +134,61 @@ class _HomeTabState extends ConsumerState<HomeTab> {
                   childAspectRatio: 2.3,
                   mainAxisSpacing: 10,
                   crossAxisSpacing: 10,
-                  children: List.generate(_statItems.length, (index) {
-                    return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: Colors.grey.shade300,
-                          width: 1,
+                  children: statItems.map(
+                    (item) {
+                      return Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Colors.grey.shade300,
+                            width: 1,
+                          ),
                         ),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        spacing: 13,
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(40),
-                            child: Image.asset(
-                              _statItems[index].image,
-                              width: 40,
-                              height: 40,
-                              fit: BoxFit.cover,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          spacing: 13,
+                          children: [
+                            CircleAvatar(
+                              radius: 20,
+                              backgroundColor:
+                                  item.color ??
+                                  Theme.of(context).primaryColor,
+                              child: Image.asset(
+                                item.image,
+                                width: 20,
+                                height: 20,
+                                fit: BoxFit.cover,
+                              ),
                             ),
-                          ),
-                          Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                _statItems[index].value.toString(),
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.titleLarge?.copyWith(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black,
+                            Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  item.value.toString(),
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.titleLarge?.copyWith(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black,
+                                  ),
                                 ),
-                              ),
-                              Text(
-                                _statItems[index].description,
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(color: Colors.grey.shade800),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    );
-                  }),
+                                Text(
+                                  item.description,
+                                  style: Theme.of(context).textTheme.bodySmall
+                                      ?.copyWith(color: Colors.grey.shade800),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ).toList(),
                 ),
                 const SizedBox(height: 20),
                 Container(
@@ -298,88 +304,203 @@ class _HomeTabState extends ConsumerState<HomeTab> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          IconButton(
-                            iconSize: 20,
-                            icon: Icon(
-                              Icons.close_fullscreen_outlined,
-                              color: Theme.of(context).primaryColor,
-                            ),
-                            onPressed: () {},
+                          Row(
+                            children: [
+                              IconButton(
+                                iconSize: 20,
+                                icon: Icon(
+                                  Icons.close_fullscreen_outlined,
+                                  color: Theme.of(context).primaryColor,
+                                ),
+                                onPressed: () {},
+                              ),
+                              Text(
+                                'Recent Activity',
+                                style: TextStyle(
+                                  color: Theme.of(context).primaryColor,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
                           ),
-                          Text(
-                            'Recent Activity',
-                            style: TextStyle(
+                          IconButton(
+                            icon: Icon(
+                              Icons.replay_circle_filled_sharp,
                               color: Theme.of(context).primaryColor,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
                             ),
+                            onPressed: () {
+                              ref.invalidate(bookingsProvider(''));
+                            },
                           ),
                         ],
                       ),
                       const SizedBox(height: 5),
-                      ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: 6, // Example count
-                        itemBuilder: (context, index) {
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 10),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              border: Border.all(
-                                color: Colors.green.shade100,
-                                width: 1,
+                      recentBookings.when(
+                        loading:
+                            () => const Center(
+                              child: SizedBox(
+                                width: double.infinity,
+                                height: 200,
+                                child: Center(
+                                  child: SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                ),
                               ),
-                              borderRadius: BorderRadius.circular(8),
                             ),
-                            child: ListTile(
-                              leading: ClipOval(
-                                child: Image.asset(
-                                  'assets/images/map.png',
-                                  width: 40,
-                                  height: 40,
-                                  fit: BoxFit.cover,
-                                ),
+                        data: (data) {
+                          if (data.isEmpty) {
+                            return const SizedBox(
+                              height: 200,
+                              child: Center(
+                                child: Text('No recent bookings found.'),
                               ),
-                              title: Text(
-                                'Kacyiru, Subaru',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
+                            );
+                          }
+                          return ListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: data.length,
+                            itemBuilder: (context, index) {
+                              final booking = data[index];
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 10),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  border: Border.all(
+                                    color: Colors.green.shade100,
+                                    width: 1,
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
-                              ),
-                              subtitle: Text(
-                                'Details of trip ${index + 1}',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey.shade800,
-                                ),
-                              ),
-                              trailing: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    '4,000 RWF',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: Theme.of(context).primaryColor,
+                                child: ListTile(
+                                  leading: ClipOval(
+                                    child: Image.asset(
+                                      'assets/images/map.png',
+                                      width: 40,
+                                      height: 40,
+                                      fit: BoxFit.cover,
                                     ),
                                   ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'MoMO Pay',
+                                  title: Text(
+                                    '${booking['fromLocation']} - ${booking['toLocation']}',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 14,
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  subtitle: Text(
+                                    '${booking['bookingDate'].toDate().toLocal()}',
                                     style: TextStyle(
                                       fontSize: 12,
                                       color: Colors.grey.shade800,
                                     ),
                                   ),
-                                ],
-                              ),
-                            ),
+                                  trailing: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        'RWF ${booking['price'].toStringAsFixed(2)}',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: Theme.of(context).primaryColor,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        booking['paymentMethod'] ?? 'Cash',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey.shade800,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
                           );
                         },
+                        //200 height
+                        error:
+                            (error, stack) => SizedBox(
+                              height: 200,
+                              child: Center(
+                                child: Text(
+                                  'Click the refresh button to try again.',
+                                ),
+                              ),
+                            ),
                       ),
+                      // ListView.builder(
+                      //   shrinkWrap: true,
+                      //   physics: const NeverScrollableScrollPhysics(),
+                      //   itemCount: _recent_bookings.length, // Example count
+                      //   itemBuilder: (context, index) {
+                      //     final booking = _recent_bookings[index];
+                      //     return Container(
+                      //       margin: const EdgeInsets.only(bottom: 10),
+                      //       decoration: BoxDecoration(
+                      //         color: Colors.white,
+                      //         border: Border.all(
+                      //           color: Colors.green.shade100,
+                      //           width: 1,
+                      //         ),
+                      //         borderRadius: BorderRadius.circular(8),
+                      //       ),
+                      //       child: ListTile(
+                      //         leading: ClipOval(
+                      //           child: Image.asset(
+                      //             'assets/images/map.png',
+                      //             width: 40,
+                      //             height: 40,
+                      //             fit: BoxFit.cover,
+                      //           ),
+                      //         ),
+                      //         title: Text(
+                      //           '${booking['fromLocation']} - ${booking['toLocation']}',
+                      //           style: TextStyle(fontWeight: FontWeight.bold),
+                      //         ),
+                      //         subtitle: Text(
+                      //           '${booking['bookingDate'].toDate().toLocal()}',
+                      //           style: TextStyle(
+                      //             fontSize: 12,
+                      //             color: Colors.grey.shade800,
+                      //           ),
+                      //         ),
+                      //         trailing: Column(
+                      //           mainAxisAlignment: MainAxisAlignment.center,
+                      //           children: [
+                      //             Text(
+                      //               'RWF ${booking['price'].toStringAsFixed(2)}',
+                      //               style: TextStyle(
+                      //                 fontSize: 16,
+                      //                 fontWeight: FontWeight.bold,
+                      //                 color: Theme.of(context).primaryColor,
+                      //               ),
+                      //             ),
+                      //             const SizedBox(height: 4),
+                      //             Text(
+                      //               booking['paymentMethod'] ?? 'Cash',
+                      //               style: TextStyle(
+                      //                 fontSize: 12,
+                      //                 color: Colors.grey.shade800,
+                      //               ),
+                      //             ),
+                      //           ],
+                      //         ),
+                      //       ),
+                      //     );
+                      //   },
+                      // ),
                     ],
                   ),
                 ),

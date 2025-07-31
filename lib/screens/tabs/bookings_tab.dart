@@ -12,7 +12,7 @@ class BookingsTab extends StatefulWidget {
 }
 
 class _BookingsTabState extends State<BookingsTab> {
-  late GoogleMapController _controller;
+  late GoogleMapController? _controller;
   final TextEditingController _fromController = TextEditingController();
   final TextEditingController _toController = TextEditingController();
 
@@ -34,52 +34,72 @@ class _BookingsTabState extends State<BookingsTab> {
     PlaceResult(
       name: "Nyamirambo Women's Center",
       address: "KK 154 ST, Kigali, Rwanda",
-      geometry: PlaceGeometry(location: PlaceLocation(lat: -1.9706, lng: 30.1044)),
+      geometry: PlaceGeometry(
+        location: PlaceLocation(lat: -1.9706, lng: 30.1044),
+      ),
     ),
     PlaceResult(
       name: "Biryongo, Car Freezone",
       address: "KK 154 ST, Kigali, Rwanda",
-      geometry: PlaceGeometry(location: PlaceLocation(lat: -1.9650, lng: 30.1100)),
+      geometry: PlaceGeometry(
+        location: PlaceLocation(lat: -1.9650, lng: 30.1100),
+      ),
     ),
     PlaceResult(
       name: "Kacyiru, Subaru",
       address: "KK 154 ST, Kigali, Rwanda",
-      geometry: PlaceGeometry(location: PlaceLocation(lat: -1.9500, lng: 30.1200)),
+      geometry: PlaceGeometry(
+        location: PlaceLocation(lat: -1.9500, lng: 30.1200),
+      ),
     ),
     PlaceResult(
       name: "Kigali Convention Centre",
       address: "KG 2 Roundabout, Kigali, Rwanda",
-      geometry: PlaceGeometry(location: PlaceLocation(lat: -1.9441, lng: 30.0619)),
+      geometry: PlaceGeometry(
+        location: PlaceLocation(lat: -1.9441, lng: 30.0619),
+      ),
     ),
     PlaceResult(
       name: "Kigali International Airport",
       address: "Airport Road, Kigali, Rwanda",
-      geometry: PlaceGeometry(location: PlaceLocation(lat: -1.9686, lng: 30.1395)),
+      geometry: PlaceGeometry(
+        location: PlaceLocation(lat: -1.9686, lng: 30.1395),
+      ),
     ),
     PlaceResult(
       name: "University of Rwanda",
       address: "Huye, Southern Province, Rwanda",
-      geometry: PlaceGeometry(location: PlaceLocation(lat: -2.6103, lng: 29.7397)),
+      geometry: PlaceGeometry(
+        location: PlaceLocation(lat: -2.6103, lng: 29.7397),
+      ),
     ),
     PlaceResult(
       name: "Lake Kivu",
       address: "Western Province, Rwanda",
-      geometry: PlaceGeometry(location: PlaceLocation(lat: -2.3414, lng: 29.1267)),
+      geometry: PlaceGeometry(
+        location: PlaceLocation(lat: -2.3414, lng: 29.1267),
+      ),
     ),
     PlaceResult(
       name: "Volcanoes National Park",
       address: "Musanze, Northern Province, Rwanda",
-      geometry: PlaceGeometry(location: PlaceLocation(lat: -1.4671, lng: 29.5236)),
+      geometry: PlaceGeometry(
+        location: PlaceLocation(lat: -1.4671, lng: 29.5236),
+      ),
     ),
     PlaceResult(
       name: "Kimisagara Market",
       address: "Nyarugenge, Kigali, Rwanda",
-      geometry: PlaceGeometry(location: PlaceLocation(lat: -1.9536, lng: 30.0588)),
+      geometry: PlaceGeometry(
+        location: PlaceLocation(lat: -1.9536, lng: 30.0588),
+      ),
     ),
     PlaceResult(
       name: "Remera Taxi Park",
       address: "Gasabo, Kigali, Rwanda",
-      geometry: PlaceGeometry(location: PlaceLocation(lat: -1.9355, lng: 30.1086)),
+      geometry: PlaceGeometry(
+        location: PlaceLocation(lat: -1.9355, lng: 30.1086),
+      ),
     ),
   ];
 
@@ -87,12 +107,6 @@ class _BookingsTabState extends State<BookingsTab> {
     target: LatLng(-1.9706, 30.1044),
     zoom: 12,
   );
-
-  @override
-  void initState() {
-    super.initState();
-    _checkLocationPermission();
-  }
 
   Future<void> _checkLocationPermission() async {
     // For development, skip permission check
@@ -124,9 +138,11 @@ class _BookingsTabState extends State<BookingsTab> {
       _selectedFromLocation = "Kigali, Rwanda";
     });
 
-    _controller.animateCamera(
-      CameraUpdate.newLatLng(_currentLocation!),
-    );
+    if (_controller == null) {
+      return;
+    }
+
+    _controller?.animateCamera(CameraUpdate.newLatLng(_currentLocation!));
   }
 
   Future<void> _requestLocationPermission() async {
@@ -159,7 +175,9 @@ class _BookingsTabState extends State<BookingsTab> {
           _isLoadingLocation = false;
         });
       } else if (permission.isPermanentlyDenied) {
-        _showSnackBar('Location permission permanently denied. Please enable in settings.');
+        _showSnackBar(
+          'Location permission permanently denied. Please enable in settings.',
+        );
         // Optionally open app settings
         await openAppSettings();
         setState(() {
@@ -184,17 +202,20 @@ class _BookingsTabState extends State<BookingsTab> {
         _currentLocation = LatLng(position.latitude, position.longitude);
       });
 
-      _controller.animateCamera(
-        CameraUpdate.newLatLng(_currentLocation!),
-      );
+      if (_controller == null) {
+        return;
+      }
+      _controller?.animateCamera(CameraUpdate.newLatLng(_currentLocation!));
 
       // Get address from coordinates
-      String address = await _getAddressFromCoordinates(position.latitude, position.longitude);
+      String address = await _getAddressFromCoordinates(
+        position.latitude,
+        position.longitude,
+      );
       setState(() {
         _fromController.text = address;
         _selectedFromLocation = address;
       });
-
     } catch (e) {
       _showSnackBar('Error getting current location: $e');
     }
@@ -239,11 +260,14 @@ class _BookingsTabState extends State<BookingsTab> {
 
     try {
       // Filter mock places based on search query
-      final List<PlaceResult> results = _mockPlaces
-          .where((place) =>
-      place.name.toLowerCase().contains(query.toLowerCase()) ||
-          place.address.toLowerCase().contains(query.toLowerCase()))
-          .toList();
+      final List<PlaceResult> results =
+          _mockPlaces
+              .where(
+                (place) =>
+                    place.name.toLowerCase().contains(query.toLowerCase()) ||
+                    place.address.toLowerCase().contains(query.toLowerCase()),
+              )
+              .toList();
 
       setState(() {
         _searchResults = results;
@@ -270,8 +294,12 @@ class _BookingsTabState extends State<BookingsTab> {
       _searchResults = [];
     });
 
+    if (_controller == null) {
+      return;
+    }
+
     // Move camera to selected location
-    _controller.animateCamera(
+    _controller?.animateCamera(
       CameraUpdate.newLatLng(
         LatLng(place.geometry.location.lat, place.geometry.location.lng),
       ),
@@ -282,14 +310,16 @@ class _BookingsTabState extends State<BookingsTab> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => RideBookingScreen(
-            fromLocation: _selectedFromLocation!,
-            toLocation: _selectedToLocation!,
-          ),
+          builder:
+              (context) => RideBookingScreen(
+                fromLocation: _selectedFromLocation!,
+                toLocation: _selectedToLocation!,
+              ),
         ),
       );
     }
   }
+
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -301,7 +331,7 @@ class _BookingsTabState extends State<BookingsTab> {
 
   @override
   void dispose() {
-    _controller.dispose();
+    _controller?.dispose();
     _fromController.dispose();
     _toController.dispose();
     super.dispose();
@@ -319,6 +349,7 @@ class _BookingsTabState extends State<BookingsTab> {
               initialCameraPosition: _kKigali,
               onMapCreated: (GoogleMapController controller) {
                 _controller = controller;
+                _checkLocationPermission();
               },
               myLocationEnabled: _isLocationEnabled,
               myLocationButtonEnabled: false,
@@ -378,7 +409,10 @@ class _BookingsTabState extends State<BookingsTab> {
                           width: double.infinity,
                           height: 52,
                           child: ElevatedButton(
-                            onPressed: _isLoadingLocation ? null : _requestLocationPermission,
+                            onPressed:
+                                _isLoadingLocation
+                                    ? null
+                                    : _requestLocationPermission,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF2F5D5A),
                               shape: RoundedRectangleBorder(
@@ -386,23 +420,24 @@ class _BookingsTabState extends State<BookingsTab> {
                               ),
                               elevation: 0,
                             ),
-                            child: _isLoadingLocation
-                                ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2,
-                              ),
-                            )
-                                : const Text(
-                              'Grant Permission',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              ),
-                            ),
+                            child:
+                                _isLoadingLocation
+                                    ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        color: Colors.white,
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                    : const Text(
+                                      'Grant Permission',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.white,
+                                      ),
+                                    ),
                           ),
                         ),
                         const SizedBox(height: 12),
@@ -410,7 +445,8 @@ class _BookingsTabState extends State<BookingsTab> {
                           width: double.infinity,
                           height: 52,
                           child: ElevatedButton(
-                            onPressed: _isLoadingLocation ? null : _onMaybeLater,
+                            onPressed:
+                                _isLoadingLocation ? null : _onMaybeLater,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFFE5B429),
                               shape: RoundedRectangleBorder(
@@ -442,8 +478,10 @@ class _BookingsTabState extends State<BookingsTab> {
                 right: 0,
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 300),
-                  height: _isSearchExpanded ?
-                  MediaQuery.of(context).size.height * 0.7 : 200,
+                  height:
+                      _isSearchExpanded
+                          ? MediaQuery.of(context).size.height * 0.7
+                          : 200,
                   decoration: const BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.only(
@@ -451,69 +489,46 @@ class _BookingsTabState extends State<BookingsTab> {
                       topRight: Radius.circular(20),
                     ),
                   ),
-                  child: Column(
-                    children: [
-                      // Handle bar
-                      Container(
-                        margin: const EdgeInsets.only(top: 12),
-                        width: 40,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade300,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-
-                      if (_isSearchExpanded) ...[
-                        // Header with close button
-                        Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Row(
-                            children: [
-                              GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    _isSearchExpanded = false;
-                                    _searchResults = [];
-                                  });
-                                },
-                                child: const Icon(
-                                  Icons.close,
-                                  size: 24,
-                                  color: Colors.black,
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              const Expanded(
-                                child: Text(
-                                  "Let's travel together",
-                                  style: TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.black,
-                                  ),
-                                ),
-                              ),
-                            ],
+                  child: SingleChildScrollView(
+                    // Added to handle overflow
+                    child: Column(
+                      children: [
+                        // Handle bar
+                        Container(
+                          margin: const EdgeInsets.only(top: 12),
+                          width: 40,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade300,
+                            borderRadius: BorderRadius.circular(2),
                           ),
                         ),
 
-                        // Current location display
-                        if (_selectedFromLocation != null)
-                          Container(
-                            margin: const EdgeInsets.symmetric(horizontal: 16),
+                        if (_isSearchExpanded) ...[
+                          // Header with close button
+                          Padding(
                             padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade100,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
                             child: Row(
                               children: [
-                                Expanded(
+                                GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      _isSearchExpanded = false;
+                                      _searchResults = [];
+                                    });
+                                  },
+                                  child: const Icon(
+                                    Icons.close,
+                                    size: 24,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                const Expanded(
                                   child: Text(
-                                    _selectedFromLocation!,
-                                    style: const TextStyle(
-                                      fontSize: 18,
+                                    "Let's travel together",
+                                    style: TextStyle(
+                                      fontSize: 20,
                                       fontWeight: FontWeight.w600,
                                       color: Colors.black,
                                     ),
@@ -523,112 +538,154 @@ class _BookingsTabState extends State<BookingsTab> {
                             ),
                           ),
 
-                        const SizedBox(height: 16),
-
-                        // Search inputs
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Column(
-                            children: [
-                              // From location
-                              _buildLocationInput(
-                                controller: _fromController,
-                                icon: Icons.radio_button_checked,
-                                iconColor: const Color(0xFF2F5D5A),
-                                hint: 'From location',
-                                isFromLocation: true,
-                              ),
-                              const SizedBox(height: 12),
-                              // To location
-                              _buildLocationInput(
-                                controller: _toController,
-                                icon: Icons.location_on,
-                                iconColor: const Color(0xFFE5B429),
-                                hint: 'To location',
-                                isFromLocation: false,
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        // Search results or loading
-                        Expanded(
-                          child: _isSearching
-                              ? const Center(
-                            child: CircularProgressIndicator(
-                              color: Color(0xFF2F5D5A),
-                            ),
-                          )
-                              : _searchResults.isEmpty
-                              ? const Center(
-                            child: Text(
-                              'Start typing to search for places',
-                              style: TextStyle(
-                                color: Colors.grey,
-                                fontSize: 16,
-                              ),
-                            ),
-                          )
-                              : ListView.builder(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            itemCount: _searchResults.length,
-                            itemBuilder: (context, index) {
-                              final place = _searchResults[index];
-                              return _buildLocationSuggestion(place);
-                            },
-                          ),
-                        ),
-                      ] else ...[
-                        // Collapsed state
-                        const SizedBox(height: 25),
-                        const Text(
-                          "Let's travel together",
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black,
-                          ),
-                        ),
-                        const SizedBox(height: 30),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 24),
-                          child: GestureDetector(
-                            onTap: _onSearchTap,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
+                          // Current location display
+                          if (_selectedFromLocation != null)
+                            Container(
+                              margin: const EdgeInsets.symmetric(
                                 horizontal: 16,
-                                vertical: 14,
                               ),
+                              padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: Colors.grey.shade200,
-                                borderRadius: BorderRadius.circular(8),
+                                color: Colors.grey.shade100,
+                                borderRadius: BorderRadius.circular(12),
                               ),
                               child: Row(
                                 children: [
                                   Expanded(
                                     child: Text(
-                                      _selectedFromLocation ?? 'Enter location',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        color: _selectedFromLocation != null
-                                            ? Colors.black
-                                            : Colors.grey.shade600,
+                                      _selectedFromLocation!,
+                                      style: const TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.black,
                                       ),
                                     ),
-                                  ),
-                                  Icon(
-                                    Icons.location_on_outlined,
-                                    color: Colors.grey.shade600,
                                   ),
                                 ],
                               ),
                             ),
+
+                          const SizedBox(height: 16),
+
+                          // Search inputs
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Column(
+                              children: [
+                                _buildLocationInput(
+                                  controller: _fromController,
+                                  icon: Icons.radio_button_checked,
+                                  iconColor: const Color(0xFF2F5D5A),
+                                  hint: 'From location',
+                                  isFromLocation: true,
+                                ),
+                                const SizedBox(height: 12),
+                                _buildLocationInput(
+                                  controller: _toController,
+                                  icon: Icons.location_on,
+                                  iconColor: const Color(0xFFE5B429),
+                                  hint: 'To location',
+                                  isFromLocation: false,
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
+
+                          const SizedBox(height: 20),
+
+                          // Search results or loading
+                          SizedBox(
+                            // Constrain the height to avoid overflow
+                            height:
+                                _isSearchExpanded
+                                    ? (MediaQuery.of(context).size.height *
+                                            0.7) -
+                                        200 // Adjust based on header/input height
+                                    : 0,
+                            child:
+                                _isSearching
+                                    ? const Center(
+                                      child: CircularProgressIndicator(
+                                        color: Color(0xFF2F5D5A),
+                                      ),
+                                    )
+                                    : _searchResults.isEmpty
+                                    ? const Center(
+                                      child: Text(
+                                        'Start typing to search for places',
+                                        style: TextStyle(
+                                          color: Colors.grey,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                    )
+                                    : ListView.builder(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                      ),
+                                      itemCount: _searchResults.length,
+                                      shrinkWrap:
+                                          true, // Allows ListView to take only needed space
+                                      physics:
+                                          const NeverScrollableScrollPhysics(), // Let parent scroll
+                                      itemBuilder: (context, index) {
+                                        final place = _searchResults[index];
+                                        return _buildLocationSuggestion(place);
+                                      },
+                                    ),
+                          ),
+                        ] else ...[
+                          // Collapsed state
+                          const SizedBox(height: 25),
+                          const Text(
+                            "Let's travel together",
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black,
+                            ),
+                          ),
+                          const SizedBox(height: 30),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 24),
+                            child: GestureDetector(
+                              onTap: _onSearchTap,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 14,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.shade200,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        _selectedFromLocation ??
+                                            'Enter location',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          color:
+                                              _selectedFromLocation != null
+                                                  ? Colors.black
+                                                  : Colors.grey.shade600,
+                                        ),
+                                      ),
+                                    ),
+                                    Icon(
+                                      Icons.location_on_outlined,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
                 ),
               ),
@@ -653,21 +710,14 @@ class _BookingsTabState extends State<BookingsTab> {
       ),
       child: Row(
         children: [
-          Icon(
-            icon,
-            color: iconColor,
-            size: 20,
-          ),
+          Icon(icon, color: iconColor, size: 20),
           const SizedBox(width: 12),
           Expanded(
             child: TextField(
               controller: controller,
               decoration: InputDecoration(
                 hintText: hint,
-                hintStyle: TextStyle(
-                  color: Colors.grey.shade500,
-                  fontSize: 16,
-                ),
+                hintStyle: TextStyle(color: Colors.grey.shade500, fontSize: 16),
                 border: InputBorder.none,
               ),
               onChanged: (value) {
@@ -725,10 +775,7 @@ class _BookingsTabState extends State<BookingsTab> {
                   const SizedBox(height: 2),
                   Text(
                     place.address,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade600,
-                    ),
+                    style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
