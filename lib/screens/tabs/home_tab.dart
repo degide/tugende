@@ -10,58 +10,56 @@ class HomeTab extends ConsumerStatefulWidget {
   ConsumerState<HomeTab> createState() => _HomeTabState();
 }
 
-enum StatType {
-  bookedRides,
-  dayStreak,
-  appliedPromos,
-  totalTips,
-}
+enum StatType { bookedRides, dayStreak, appliedPromos, totalTips }
 
 class _StatItem {
   final StatType type;
   final int value;
   final String image;
   final String description;
+  final Color? color;
 
   _StatItem({
     required this.type,
     required this.value,
     required this.image,
     required this.description,
+    this.color,
   });
 }
 
 class _HomeTabState extends ConsumerState<HomeTab> {
-  final List<_StatItem> _statItems = [
-    _StatItem(
-      type: StatType.bookedRides,
-      value: 0,
-      image: 'assets/images/taxi_1.png',
-      description: 'Booked Rides',
-    ),
-    _StatItem(
-      type: StatType.dayStreak,
-      value: 0,
-      image: 'assets/images/taxi_2.png',
-      description: 'Day Streak',
-    ),
-    _StatItem(
-      type: StatType.appliedPromos,
-      value: 0,
-      image: 'assets/images/taxi_3.png',
-      description: 'Applied Promos',
-    ),
-    _StatItem(
-      type: StatType.totalTips,
-      value: 0,
-      image: 'assets/images/taxi_1.png',
-      description: 'Total Tips',
-    ),
-  ];
-
   @override
   Widget build(BuildContext context) {
     final userState = ref.watch(userStateProvider);
+    final List<_StatItem> _statItems = [
+      _StatItem(
+        type: StatType.bookedRides,
+        value: 0,
+        image: 'assets/icons/twemoji_racing-car.png',
+        description: 'Booked Rides',
+      ),
+      _StatItem(
+        type: StatType.dayStreak,
+        value: 0,
+        image: 'assets/icons/noto-v1_fire.png',
+        description: 'Day Streak',
+        color: Theme.of(context).colorScheme.secondary,
+      ),
+      _StatItem(
+        type: StatType.appliedPromos,
+        value: 0,
+        image: 'assets/icons/lsicon_badge-promotion-filled.png',
+        description: 'Applied Promos',
+        color: Theme.of(context).colorScheme.secondary,
+      ),
+      _StatItem(
+        type: StatType.totalTips,
+        value: 0,
+        image: 'assets/icons/noto_money-bag.png',
+        description: 'Total Tips',
+      ),
+    ];
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -82,7 +80,7 @@ class _HomeTabState extends ConsumerState<HomeTab> {
                   children: [
                     CircleAvatar(
                       radius: 30,
-                      backgroundImage: AssetImage('assets/images/avatar.png'),
+                      backgroundImage: AssetImage('assets/icons/avatar.png'),
                     ),
                     Expanded(
                       child: Column(
@@ -149,12 +147,15 @@ class _HomeTabState extends ConsumerState<HomeTab> {
                         crossAxisAlignment: CrossAxisAlignment.center,
                         spacing: 13,
                         children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(40),
+                          CircleAvatar(
+                            radius: 20,
+                            backgroundColor:
+                                _statItems[index].color ??
+                                Theme.of(context).primaryColor,
                             child: Image.asset(
                               _statItems[index].image,
-                              width: 40,
-                              height: 40,
+                              width: 20,
+                              height: 20,
                               fit: BoxFit.cover,
                             ),
                           ),
@@ -344,9 +345,7 @@ class _HomeTabState extends ConsumerState<HomeTab> {
                               ),
                               title: Text(
                                 'Kacyiru, Subaru',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                ),
+                                style: TextStyle(fontWeight: FontWeight.bold),
                               ),
                               subtitle: Text(
                                 'Details of trip ${index + 1}',
