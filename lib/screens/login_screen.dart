@@ -1,6 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+
+// Firebase Auth Service Provider
+final firebaseAuthProvider = Provider<FirebaseAuth>((ref) => FirebaseAuth.instance);
+
+// Google Sign In Provider - Updated for version 7+
+final googleSignInProvider = Provider<GoogleSignIn>((ref) {
+  return GoogleSignIn.instance;
+});
+
+// Auth State Provider
+final authStateProvider = StreamProvider<User?>((ref) {
+  return ref.watch(firebaseAuthProvider).authStateChanges();
+});
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -22,12 +37,55 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _rememberMe = false;
   bool _obscurePassword = true;
   bool _isLoading = false;
+  bool _isGoogleInitialized = false; // Flag to ensure Google Sign-In is initialized
+  String? _verificationId;
 
   final Map<String, String> _countryCodes = {
     '+250': '🇷🇼', '+256': '🇺🇬', '+254': '🇰🇪',
     '+255': '🇹🇿', '+233': '🇬🇭', '+234': '🇳🇬',
     '+27': '🇿🇦', '+1': '🇺🇸', '+44': '🇬🇧',
   };
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeGoogleSignIn();
+  }
+
+  Future<void> _initializeGoogleSignIn() async {
+    try {
+      final googleSignIn = ref.read(googleSignInProvider);
+
+      // Initialize Google Sign-In with your client IDs
+      // Replace with your actual client ID from Google Cloud Console
+      // and your server client ID if you have one.
+      // This is crucial for Google Sign-In v7+.
+      await googleSignIn.initialize(
+        clientId: 'YOUR_CLIENT_ID.apps.googleusercontent.com', // **IMPORTANT: Replace with your actual client ID**
+        serverClientId: 'YOUR_SERVER_CLIENT_ID.apps.googleusercontent.com', // **IMPORTANT: Replace if you have a server client ID**
+      );
+
+      // Optionally, attempt lightweight authentication if you want to check for a previously signed-in user
+      // without user interaction.
+      // final GoogleSignInAccount? signedInAccount = await googleSignIn.attemptLightweightAuthentication();
+      // if (signedInAccount != null) {
+      //   print('Silently signed in with: ${signedInAccount.displayName}');
+      //   // Handle silent sign-in, e.g., navigate to home
+      // }
+
+      setState(() {
+        _isGoogleInitialized = true;
+      });
+      print('Google Sign-In initialized successfully.');
+    } catch (e) {
+      print('Google Sign-In initialization failed: $e');
+      setState(() {
+        _isGoogleInitialized = true; // Still allow UI, but sign-in might fail
+      });
+      // Consider showing an error to the user if initialization is critical
+      _showErrorDialog('Google Sign-In initialization failed. Please ensure your configuration is correct.');
+    }
+  }
 
   @override
   void dispose() {
@@ -82,7 +140,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         text: 'Sign Up',
                         color: const Color(0xFFF2B200),
                         textColor: Colors.black,
-                        onPressed: () => Navigator.pushNamed(context, '/phone-input'),
+                        onPressed: () => Navigator.pushNamed(context, '/phone-input'), // Example navigation
                       ),
                     ],
                   ),
@@ -106,7 +164,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
+              const Text(
                 'Welcome back!',
                 style: TextStyle(
                   fontSize: 24,
@@ -114,7 +172,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   color: Colors.black,
                 ),
               ),
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
               Text(
                 'Choose your identifier below to access your Tugende account!',
                 style: TextStyle(
@@ -125,7 +183,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             ],
           ),
         ),
-        Image.asset('assets/images/taxi_icon.png', width: 50, height: 50),
+        Image.asset('assets/images/taxi_icon.png', width: 50, height: 50), // Ensure this asset exists
       ],
     );
   }
@@ -353,20 +411,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         ),
       ),
       child: Column(
-        children: const [
-          Text(
+        children: [
+          const Text(
             'Continue with:',
             style: TextStyle(color: Colors.white, fontSize: 16),
           ),
-          SizedBox(height: 15),
+          const SizedBox(height: 15),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _SocialCircle(icon: FontAwesomeIcons.google),
-              SizedBox(width: 20),
-              _SocialCircle(icon: FontAwesomeIcons.facebookF),
-              SizedBox(width: 20),
-              _SocialCircle(icon: FontAwesomeIcons.xTwitter),
+              GestureDetector(
+                // Disable if Google Sign-In is not initialized
+                onTap: _isGoogleInitialized ? _handleGoogleSignIn : null,
+                child: Opacity(
+                  opacity: _isGoogleInitialized ? 1.0 : 0.5, // Visually indicate disabled state
+                  child: const _SocialCircle(icon: FontAwesomeIcons.google),
+                ),
+              ),
             ],
           ),
         ],
@@ -384,25 +445,195 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   Future<void> _handleLogin() async {
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(seconds: 2));
-    setState(() => _isLoading = false);
 
-    // Show dialog
+    try {
+      final auth = ref.read(firebaseAuthProvider);
+
+      if (_selectedIdentifier == 'Phone Number') {
+        await _handlePhoneLogin();
+      } else {
+        // Email/Password login
+        final credential = await auth.signInWithEmailAndPassword(
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+        );
+
+        if (credential.user != null) {
+          _showSuccessDialog('Login Successful', 'Welcome back!');
+          // Navigate to home screen
+          // Ensure you have a route named '/home' defined in your MaterialApp
+          Navigator.pushReplacementNamed(context, '/home');
+        }
+      }
+    } on FirebaseAuthException catch (e) {
+      _showErrorDialog(_getAuthErrorMessage(e.code));
+    } catch (e) {
+      _showErrorDialog('An unexpected error occurred. Please try again.');
+      print('Login Error: $e'); // For debugging
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _handlePhoneLogin() async {
+    final auth = ref.read(firebaseAuthProvider);
+    final phoneNumber = '$_selectedCountryCode${_phoneController.text.trim()}';
+
+    await auth.verifyPhoneNumber(
+      phoneNumber: phoneNumber,
+      verificationCompleted: (PhoneAuthCredential credential) async {
+        // Auto-verification (Android only)
+        final userCredential = await auth.signInWithCredential(credential);
+        if (userCredential.user != null) {
+          _showSuccessDialog('Login Successful', 'Phone verified automatically!');
+          Navigator.pushReplacementNamed(context, '/home');
+        }
+      },
+      verificationFailed: (FirebaseAuthException e) {
+        _showErrorDialog(_getAuthErrorMessage(e.code));
+      },
+      codeSent: (String verificationId, int? resendToken) {
+        _verificationId = verificationId;
+        _showOTPDialog();
+      },
+      codeAutoRetrievalTimeout: (String verificationId) {
+        _verificationId = verificationId;
+      },
+    );
+  }
+
+  Future<void> _handleGoogleSignIn() async {
+    if (!_isGoogleInitialized) {
+      _showErrorDialog('Google Sign-In is not initialized yet. Please wait or check configuration.');
+      return;
+    }
+
+    setState(() => _isLoading = true); // Indicate loading for Google sign-in as well
+
+    try {
+      final googleSignIn = ref.read(googleSignInProvider);
+      final auth = ref.read(firebaseAuthProvider);
+
+      // Use the new authenticate method. This will open the Google sign-in UI.
+      // It returns the GoogleSignInAccount directly on success.
+      final GoogleSignInAccount? googleUser = await googleSignIn.authenticate();
+
+      if (googleUser == null) {
+        // User cancelled the sign-in flow
+        print('Google Sign-In cancelled by user.');
+        return;
+      }
+
+      // Get authentication details from the signed-in Google user
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      
+      // Create a Firebase credential using the Google ID token and access token
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.idToken,
+        idToken: googleAuth.idToken,
+      );
+
+      // Sign in to Firebase with the Google credential
+      final userCredential = await auth.signInWithCredential(credential);
+      
+      if (userCredential.user != null) {
+        _showSuccessDialog('Login Successful', 'Welcome ${userCredential.user!.displayName ?? 'User'}!');
+        // Navigate to your home screen
+        Navigator.pushReplacementNamed(context, '/home');
+      }
+    } on GoogleSignInException catch (e) {
+      // Specific handling for Google Sign-In errors
+      print('Google Sign-In Exception: ${e.code.name} - ${e.description}');
+      _showErrorDialog('Google sign-in failed: ${e.description ?? 'An unknown error occurred.'}');
+    } on FirebaseAuthException catch (e) {
+      // Handling Firebase Auth specific errors that might occur after getting Google credentials
+      print('Firebase Auth Exception during Google Sign-In: ${e.code}');
+      _showErrorDialog(_getAuthErrorMessage(e.code));
+    } catch (e) {
+      // Catch any other unexpected errors
+      print('Unexpected Google Sign-In Error: $e');
+      _showErrorDialog('Google sign-in failed. Please try again.');
+    } finally {
+      setState(() => _isLoading = false); // Stop loading regardless of outcome
+    }
+  }
+
+
+  void _showOTPDialog() {
+    final otpController = TextEditingController();
+    
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Enter OTP', style: TextStyle(fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Enter the verification code sent to $_selectedCountryCode${_phoneController.text}'),
+            const SizedBox(height: 20),
+            TextField(
+              controller: otpController,
+              keyboardType: TextInputType.number,
+              maxLength: 6,
+              decoration: const InputDecoration(
+                hintText: 'Enter OTP',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => _verifyOTP(otpController.text, context),
+            child: const Text('Verify'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _verifyOTP(String otp, BuildContext dialogContext) async {
+    try {
+      final auth = ref.read(firebaseAuthProvider);
+      final credential = PhoneAuthProvider.credential(
+        verificationId: _verificationId!,
+        smsCode: otp,
+      );
+
+      final userCredential = await auth.signInWithCredential(credential);
+      if (userCredential.user != null) {
+        Navigator.pop(dialogContext); // Close OTP dialog
+        _showSuccessDialog('Login Successful', 'Phone verified successfully!');
+        Navigator.pushReplacementNamed(context, '/home');
+      }
+    } on FirebaseAuthException catch (e) {
+      Navigator.pop(dialogContext);
+      _showErrorDialog(_getAuthErrorMessage(e.code));
+    } catch (e) {
+      Navigator.pop(dialogContext);
+      _showErrorDialog('An unexpected error occurred during OTP verification. Please try again.');
+    }
+  }
+
+  void _showSuccessDialog(String title, String message) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(
-          children: const [
-            Icon(Icons.home, color: Color(0xFF0D3C34), size: 28),
-            SizedBox(width: 10),
-            Text('Coming Soon!', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0D3C34))),
+          children: [
+            const Icon(Icons.check_circle, color: Color(0xFF0D3C34), size: 28),
+            const SizedBox(width: 10),
+            Text(title, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0D3C34))),
           ],
         ),
-        content: const Text(
-          'The home page is currently under development. We\'re working hard to bring you the best experience!',
-          style: TextStyle(fontSize: 16),
-        ),
+        content: Text(message, style: const TextStyle(fontSize: 16)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -411,6 +642,54 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         ],
       ),
     );
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.error, color: Colors.red, size: 28),
+            SizedBox(width: 10),
+            Text('Error', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
+          ],
+        ),
+        content: Text(message, style: const TextStyle(fontSize: 16)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _getAuthErrorMessage(String errorCode) {
+    switch (errorCode) {
+      case 'user-not-found':
+        return 'No user found with this email address.';
+      case 'wrong-password':
+        return 'Incorrect password. Please try again.';
+      case 'invalid-email':
+        return 'Please enter a valid email address.';
+      case 'user-disabled':
+        return 'This account has been disabled.';
+      case 'too-many-requests':
+        return 'Too many attempts. Please try again later.';
+      case 'invalid-phone-number':
+        return 'Please enter a valid phone number.';
+      case 'invalid-verification-code':
+        return 'Invalid verification code. Please try again.';
+      case 'account-exists-with-different-credential':
+        return 'An account already exists with the same email address but different sign-in credentials. Please sign in using your existing method.';
+      case 'network-request-failed':
+        return 'Network error. Please check your internet connection and try again.';
+      default:
+        return 'Authentication failed. Please try again.';
+    }
   }
 }
 
