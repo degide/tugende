@@ -1,0 +1,40 @@
+# Test configuration for TugendeApp
+# This file defines test coverage and execution settings
+
+# Minimum test coverage percentage required
+coverage_threshold: 70
+
+# Test directories
+test_directories:
+  - test/
+  - integration_test/
+
+# Files to exclude from coverage
+coverage_exclude:
+  - lib/firebase_options.dart
+  - lib/main.dart
+  - lib/config/routes_config.dart
+  - "**/*.g.dart"
+  - "**/generated/**"
+
+# Test execution settings
+test_settings:
+  timeout: 30s
+  concurrency: 4
+  
+# Integration test settings
+integration_test_settings:
+  device_timeout: 60s
+  app_startup_timeout: 30s
+
+# Test types to run
+test_types:
+  - unit_tests
+  - widget_tests
+  - integration_tests
+
+# Continuous Integration settings
+ci_settings:
+  fail_on_coverage_below: 70
+  generate_html_report: true
+  upload_coverage: true

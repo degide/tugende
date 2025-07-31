@@ -162,7 +162,7 @@ class _PromosVouchersScreenState extends State<PromosVouchersScreen> {
                                   ),
                                 ),
                                 const SizedBox(width: 12),
-                                Container(
+                                SizedBox(
                                   height: 50,
                                   child: ElevatedButton(
                                     onPressed: _applyPromoCode,
