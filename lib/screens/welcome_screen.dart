@@ -33,7 +33,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
   final CarouselSliderController _controller = CarouselSliderController();
 
   void _navigateToNext() async {
-    Navigator.pushNamed(context, '/verification');
+    Navigator.pushNamed(context, '/login');
   }
 
   @override
@@ -88,6 +88,10 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
     ];
 
     return Scaffold(
+      appBar: AppBar(
+        toolbarHeight: 0,
+        backgroundColor: Colors.grey.shade100,
+      ),
       backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(

@@ -1,14 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:google_sign_in/google_sign_in.dart';
-
-// State management for authentication
-final authStateProvider = StreamProvider<User?>((ref) {
-  return FirebaseAuth.instance.authStateChanges();
-});
+import 'package:tugende/config/routes_config.dart';
+import 'package:tugende/dto/user_doc_dto.dart';
+import 'package:tugende/providers/auth_provider.dart';
 
 final loadingProvider = StateProvider<bool>((ref) => false);
 final googleLoadingProvider = StateProvider<bool>((ref) => false);
@@ -24,7 +20,6 @@ class _PhoneInputScreenState extends ConsumerState<PhoneInputScreen> {
   final TextEditingController _phoneController = TextEditingController();
   String _selectedCountryCode = '+250'; // Default: Rwanda
   bool _agreedToTerms = false;
-  String? _verificationId;
 
   final Map<String, String> _countryCodes = {
     '+250': '🇷🇼', '+256': '🇺🇬', '+254': '🇰🇪',
@@ -34,35 +29,15 @@ class _PhoneInputScreenState extends ConsumerState<PhoneInputScreen> {
 
   // Required scopes for Google Sign-In
   // 'openid' is often implicitly included or required for idToken.
-  static const List<String> _scopes = <String>[
-    'email',
-    'profile',
-    'openid', // Add openid if you specifically need idToken for some platforms/configurations
-  ];
+  // static const List<String> _scopes = <String>[
+  //   'email',
+  //   'profile',
+  //   'openid',
+  // ];
 
   @override
   void initState() {
     super.initState();
-    _initializeGoogleSignIn();
-  }
-
-  Future<void> _initializeGoogleSignIn() async {
-    try {
-      final GoogleSignIn signIn = GoogleSignIn.instance;
-      
-      // Initialize Google Sign-In (optional, authenticate() will initialize if not already)
-      await signIn.initialize(
-        // Add your client IDs here if needed (e.g., if you have specific OAuth client IDs for different platforms)
-        // clientId: 'your-client-id',
-        // serverClientId: 'your-server-client-id',
-      );
-
-      // Attempt lightweight authentication if applicable (e.g., web, Android Credential Manager)
-      // This doesn't return a GoogleSignInAccount directly, but tries to sign in silently.
-      signIn.attemptLightweightAuthentication();
-    } catch (e) {
-      print('Google Sign-In initialization error: $e');
-    }
   }
 
 
@@ -94,7 +69,6 @@ class _PhoneInputScreenState extends ConsumerState<PhoneInputScreen> {
         },
         codeSent: (String verificationId, int? resendToken) {
           ref.read(loadingProvider.notifier).state = false;
-          _verificationId = verificationId;
           Navigator.pushNamed(
             context,
             '/otp-verification',
@@ -106,7 +80,6 @@ class _PhoneInputScreenState extends ConsumerState<PhoneInputScreen> {
           );
         },
         codeAutoRetrievalTimeout: (String verificationId) {
-          _verificationId = verificationId;
         },
       );
     } catch (e) {
@@ -115,97 +88,20 @@ class _PhoneInputScreenState extends ConsumerState<PhoneInputScreen> {
     }
   }
 
-  Future<void> _signInWithGoogle() async {
-    if (!_agreedToTerms) {
-      _showSnackBar('Please agree to terms and conditions');
-      return;
-    }
-
-    ref.read(googleLoadingProvider.notifier).state = true;
-
-    try {
-      final GoogleSignIn signIn = GoogleSignIn.instance;
-
-      // Use authenticate() directly to initiate the sign-in flow
-      // It will return the GoogleSignInAccount on success.
-      final GoogleSignInAccount? googleUser = await signIn.authenticate(
-        // Pass the scopes directly here. This handles the initial authentication and authorization attempt.
-        scopeHint: _scopes, 
-      );
-
-      if (googleUser == null) {
-        _showSnackBar('Google Sign-In was canceled');
-        return;
-      }
-
-      // Get the authentication details (which includes idToken)
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-
-      // ** Crucial step for accessToken **
-      // Request authorization for specific scopes to get the accessToken
-      final GoogleSignInClientAuthorization? authorization =
-          await googleUser.authorizationClient.authorizationForScopes(_scopes);
-
-      if (authorization?.accessToken == null) {
-        // If authorization wasn't granted or accessToken is null,
-        // you might need to explicitly request it again with user interaction.
-        // This is more common if you have sensitive scopes.
-        // For basic 'email', 'profile', 'openid', authenticate() usually handles it.
-        // However, if your app needs accessToken for other Google APIs, this step is vital.
-        final GoogleSignInClientAuthorization? newAuthorization =
-            await googleUser.authorizationClient.authorizeScopes(_scopes);
-
-        if (newAuthorization?.accessToken == null) {
-          _showSnackBar('Failed to get access token after re-authorization');
-          return;
-        }
-        // Use the newAuthorization if it was successful
-        // authorization = newAuthorization; // Not strictly needed if we return early
-      }
-
-      // Create Firebase credential
-      // idToken comes from googleAuth (authentication part)
-      // accessToken comes from authorization (scopes part)
-      final credential = GoogleAuthProvider.credential(
-        accessToken: authorization?.accessToken, // Use the accessToken from the authorization object
-        idToken: googleAuth.idToken,
-      );
-
-      // Sign in to Firebase with the Google credentials
-      final UserCredential userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
-      
-      // Create or update user profile
-      await _createUserProfileFromGoogle(userCredential.user, googleUser);
-      
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, '/home');
-      }
-    } on GoogleSignInException catch (e) {
-      // Handle specific Google Sign-In exceptions
-      if (e.code == GoogleSignInExceptionCode.canceled) {
-        _showSnackBar('Google Sign-In was canceled');
-      } else {
-        _showSnackBar('Google sign-in failed: ${e.description}');
-        print('Google Sign-In Error: ${e.description}');
-      }
-    } catch (e) {
-      _showSnackBar('Google sign-in failed: ${e.toString()}');
-      print('Google Sign-In Error: $e');
-    } finally {
-      ref.read(googleLoadingProvider.notifier).state = false;
-    }
-  }
-
   Future<void> _signInWithCredential(PhoneAuthCredential credential) async {
     try {
       final userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
       await _createUserProfile(userCredential.user);
       
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, '/home');
+      final userDoc = FirebaseFirestore.instance.collection('users').doc(userCredential.user!.uid);
+      final docSnapshot = await userDoc.get();
+      if (mounted && docSnapshot.exists) {
+        final user = UserDocDto.fromJson(docSnapshot.data()!);
+        ref.read(userStateProvider.notifier).signInUser(user);
+        Navigator.pushReplacementNamed(context, RouteNames.homeScreen);
       }
     } catch (e) {
-      _showSnackBar('Sign-in failed: ${e.toString()}');
+      _showSnackBar('Sign-in failed');
     } finally {
       ref.read(loadingProvider.notifier).state = false;
     }
@@ -226,45 +122,11 @@ class _PhoneInputScreenState extends ConsumerState<PhoneInputScreen> {
           'isActive': true,
           'profileCompleted': false,
           'signInMethod': 'phone',
-        });
-      }
-    } catch (e) {
-      print('Error creating user profile: $e');
-    }
-  }
-
-  Future<void> _createUserProfileFromGoogle(User? user, GoogleSignInAccount googleUser) async {
-    if (user == null) return;
-
-    try {
-      final userDoc = FirebaseFirestore.instance.collection('users').doc(user.uid);
-      final docSnapshot = await userDoc.get();
-
-      if (!docSnapshot.exists) {
-        await userDoc.set({
-          'uid': user.uid,
-          'email': user.email,
-          'displayName': user.displayName,
-          'photoURL': user.photoURL,
-          'phoneNumber': user.phoneNumber, // This might be null for Google sign-in
-          'createdAt': FieldValue.serverTimestamp(),
-          'isActive': true,
-          'profileCompleted': true, // Google provides more complete profile info
-          'signInMethod': 'google',
-          'googleId': googleUser.id,
-        });
-      } else {
-        // Update existing profile with Google info
-        await userDoc.update({
-          'email': user.email,
-          'displayName': user.displayName,
-          'photoURL': user.photoURL,
-          'lastSignInMethod': 'google',
           'lastSignInAt': FieldValue.serverTimestamp(),
         });
       }
     } catch (e) {
-      print('Error creating/updating user profile: $e');
+      print('Error creating user profile: $e');
     }
   }
 
@@ -453,7 +315,7 @@ class _PhoneInputScreenState extends ConsumerState<PhoneInputScreen> {
 
   Widget _buildTermsCheckbox() {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Checkbox(
           visualDensity: VisualDensity.compact,
@@ -515,10 +377,11 @@ class _PhoneInputScreenState extends ConsumerState<PhoneInputScreen> {
   }
 
   Widget _buildFooter() {
-    final isGoogleLoading = ref.watch(googleLoadingProvider);
+    // final isGoogleLoading = ref.watch(googleLoadingProvider);
     
     return Container(
       width: double.infinity,
+      height: 100,
       padding: const EdgeInsets.symmetric(vertical: 20),
       decoration: const BoxDecoration(
         color: Color(0xFF0D3C34),
@@ -529,61 +392,23 @@ class _PhoneInputScreenState extends ConsumerState<PhoneInputScreen> {
       ),
       child: Column(
         children: [
-          const Text(
-            'Continue with:',
-            style: TextStyle(color: Colors.white, fontSize: 16),
-          ),
-          const SizedBox(height: 15),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _SocialCircle(
-                icon: FontAwesomeIcons.google,
-                isLoading: isGoogleLoading,
-                onTap: _signInWithGoogle,
-              ),
-            ],
-          ),
+          // const SizedBox(height: 20),
+          // const Text(
+          //   'Continue with:',
+          //   style: TextStyle(color: Colors.white, fontSize: 16),
+          // ),
+          // const SizedBox(height: 15),
+          // Row(
+          //   mainAxisAlignment: MainAxisAlignment.center,
+          //   children: [
+          //     _SocialCircle(
+          //       icon: FontAwesomeIcons.google,
+          //       isLoading: isGoogleLoading,
+          //       onTap: _signInWithGoogle,
+          //     ),
+          //   ],
+          // ),
         ],
-      ),
-    );
-  }
-}
-
-class _SocialCircle extends StatelessWidget {
-  final IconData icon;
-  final bool isLoading;
-  final VoidCallback? onTap;
-  
-  const _SocialCircle({
-    required this.icon,
-    this.isLoading = false,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: isLoading ? null : onTap,
-      child: Container(
-        width: 48,
-        height: 48,
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.white),
-          borderRadius: BorderRadius.circular(30),
-        ),
-        child: Center(
-          child: isLoading
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  ),
-                )
-              : FaIcon(icon, color: Colors.white, size: 20),
-        ),
       ),
     );
   }

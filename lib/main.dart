@@ -11,7 +11,6 @@ import 'package:tugende/screens/home_screen.dart';
 import 'package:tugende/screens/redeem_promo_screen.dart';
 import 'package:tugende/screens/splash_screen.dart';
 import 'package:tugende/screens/welcome_screen.dart';
-import 'package:tugende/screens/verification_screen.dart';
 import 'package:tugende/screens/phone_input_screen.dart';
 import 'package:tugende/screens/otp_verification_screen.dart';
 import 'package:tugende/screens/personal_details_screen.dart';
@@ -42,7 +41,6 @@ class TugendeApp extends ConsumerWidget {
       routes: {
         RouteNames.splashScreen: (context) => const SplashScreen(),
         RouteNames.welcomeScreen: (context) => const WelcomeScreen(),
-        RouteNames.verificationScreen: (context) => const VerificationScreen(),
         RouteNames.phoneInputScreen: (context) => const PhoneInputScreen(),
         RouteNames.otpVerificationScreen: (context) => const OtpVerificationScreen(),
         RouteNames.personalDetailsScreen: (context) => const PersonalDetailsScreen(),
