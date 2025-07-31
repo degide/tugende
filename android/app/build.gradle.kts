@@ -18,6 +18,7 @@ dependencies {
 }
 
 android {
+    ndkVersion = "27.0.12077973"
     namespace = "com.example.tugende"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = "27.0.12077973" //flutter.ndkVersion
