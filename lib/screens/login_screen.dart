@@ -19,7 +19,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
-  final TextEditingController _otpController = TextEditingController();
+   final  TextEditingController _otpController = TextEditingController();
 
   final FocusNode _emailFocusNode = FocusNode();
   final FocusNode _phoneFocusNode = FocusNode();
@@ -93,7 +93,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         color: const Color(0xFF0D3C34),
                         textColor: Colors.white,
                         isLoading: _isLoading,
-                        onPressed: _isFormValid() ? _handleLogin : null,
+                        onPressed: _isFormValid()
+                            ? ()=> _handleLogin()
+                            : null,
                       ),
                       const SizedBox(height: 15),
                       _buildActionButton(
@@ -429,6 +431,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       final auth = ref.read(firebaseAuthProvider);
 
       if (_selectedIdentifier == 'Phone Number') {
+   
         await _handlePhoneLogin();
       } else {
         // Email/Password login
@@ -436,28 +439,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           email: _emailController.text.trim(),
           password: _passwordController.text,
         );
-
+         print(credential);
         if (credential.user != null) {
-          final userDoc = FirebaseFirestore.instance
-              .collection('users')
-              .where('email', isEqualTo: _emailController.text.trim());
-          final docSnapshots = await userDoc.get();
-
-          if (mounted && docSnapshots.docs.isNotEmpty) {
-            final user = UserDocDto.fromJson(docSnapshots.docs.first.data());
-            ref.read(userStateProvider.notifier).signInUser(user);
-            Navigator.pushNamedAndRemoveUntil(
-              context,
-              RouteNames.homeScreen,
-              (route) => false,
-            );
-          } else {
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('User not found. Please sign up first.')),
-              );
-            }
-          }
+          _showSuccessDialog('Login Successful', 'Welcome back!');
+          // Navigate to home screen
+          // Ensure you have a route named '/home' defined in your MaterialApp
+         
         }
       }
     } on FirebaseAuthException catch (e) {
@@ -480,6 +467,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       verificationCompleted: (PhoneAuthCredential credential) async {
         // Auto-verification (Android only)
         final userCredential = await auth.signInWithCredential(credential);
+       
         if (userCredential.user != null) {
           final userDoc = FirebaseFirestore.instance
               .collection('users')
@@ -504,6 +492,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         }
       },
       verificationFailed: (FirebaseAuthException e) {
+        print("it faillleddd");
         _showErrorDialog(_getAuthErrorMessage(e.code));
       },
       codeSent: (String verificationId, int? resendToken) {
@@ -575,6 +564,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   /// Shows OTP verification dialog
   void _showOTPDialog() {
+   
+    
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -603,7 +594,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            onPressed: () => _verifyOTP(_otpController.text, context),
+           
+             onPressed: () => _verifyOTP(_otpController.text, context),
             child: const Text('Verify'),
           ),
         ],
@@ -611,14 +603,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
-  /// Verifies the OTP entered by the user
-  Future<void> _verifyOTP(String otp, BuildContext dialogContext) async {
-    try {
-      final auth = ref.read(firebaseAuthProvider);
-      final credential = PhoneAuthProvider.credential(
-        verificationId: _verificationId!,
-        smsCode: otp,
-      );
+Future<void> _verifyOTP(String otp, BuildContext dialogContext) async {
+  try {
+    final auth = ref.read(firebaseAuthProvider);
+
+    final credential = PhoneAuthProvider.credential(
+      verificationId: _verificationId!,
+      smsCode: otp,
+    );
+    print("cred $credential");
 
     final userCredential = await auth.signInWithCredential(credential);
 
