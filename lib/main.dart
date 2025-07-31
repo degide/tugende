@@ -5,6 +5,10 @@ import 'package:tugende/config/routes_config.dart';
 import 'package:tugende/config/theme_config.dart';
 import 'package:tugende/firebase_options.dart';
 import 'package:tugende/providers/theme_provider.dart';
+import 'package:tugende/screens/edit_profile_screen.dart';
+import 'package:tugende/screens/faqs_screen.dart';
+import 'package:tugende/screens/home_screen.dart';
+import 'package:tugende/screens/redeem_promo_screen.dart';
 import 'package:tugende/screens/splash_screen.dart';
 import 'package:tugende/screens/welcome_screen.dart';
 import 'package:tugende/screens/verification_screen.dart';
@@ -45,6 +49,10 @@ class TugendeApp extends ConsumerWidget {
         RouteNames.emailVerificationScreen: (context) => const EmailVerificationScreen(),
         RouteNames.roleSelectionScreen: (context) => const RoleSelectionScreen(),
         RouteNames.loginScreen: (context) => const LoginScreen(),
+        RouteNames.homeScreen: (context) => const HomeScreen(),
+        RouteNames.faqScreen: (context) => const FaqsScreen(),
+        RouteNames.redeemPromoScreen: (context) => const RedeemPromoScreen(),
+        RouteNames.editProfileScreen: (context) => const EditProfileScreen(),
       },
       debugShowCheckedModeBanner: false,
     );
