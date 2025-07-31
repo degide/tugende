@@ -1,21 +1,12 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-
-// Firebase Auth Service Provider
-final firebaseAuthProvider = Provider<FirebaseAuth>((ref) => FirebaseAuth.instance);
-
-// Google Sign In Provider - Updated for version 7+
-final googleSignInProvider = Provider<GoogleSignIn>((ref) {
-  return GoogleSignIn.instance;
-});
-
-// Auth State Provider
-final authStateProvider = StreamProvider<User?>((ref) {
-  return ref.watch(firebaseAuthProvider).authStateChanges();
-});
+import 'package:tugende/config/routes_config.dart';
+import 'package:tugende/dto/user_doc_dto.dart';
+import 'package:tugende/providers/auth_provider.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -28,6 +19,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _otpController = TextEditingController();
 
   final FocusNode _emailFocusNode = FocusNode();
   final FocusNode _phoneFocusNode = FocusNode();
@@ -37,7 +29,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _rememberMe = false;
   bool _obscurePassword = true;
   bool _isLoading = false;
-  bool _isGoogleInitialized = false; // Flag to ensure Google Sign-In is initialized
   String? _verificationId;
 
   final Map<String, String> _countryCodes = {
@@ -49,42 +40,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   void initState() {
     super.initState();
-    _initializeGoogleSignIn();
-  }
-
-  Future<void> _initializeGoogleSignIn() async {
-    try {
-      final googleSignIn = ref.read(googleSignInProvider);
-
-      // Initialize Google Sign-In with your client IDs
-      // Replace with your actual client ID from Google Cloud Console
-      // and your server client ID if you have one.
-      // This is crucial for Google Sign-In v7+.
-      await googleSignIn.initialize(
-        clientId: 'YOUR_CLIENT_ID.apps.googleusercontent.com', // **IMPORTANT: Replace with your actual client ID**
-        serverClientId: 'YOUR_SERVER_CLIENT_ID.apps.googleusercontent.com', // **IMPORTANT: Replace if you have a server client ID**
-      );
-
-      // Optionally, attempt lightweight authentication if you want to check for a previously signed-in user
-      // without user interaction.
-      // final GoogleSignInAccount? signedInAccount = await googleSignIn.attemptLightweightAuthentication();
-      // if (signedInAccount != null) {
-      //   print('Silently signed in with: ${signedInAccount.displayName}');
-      //   // Handle silent sign-in, e.g., navigate to home
-      // }
-
-      setState(() {
-        _isGoogleInitialized = true;
-      });
-      print('Google Sign-In initialized successfully.');
-    } catch (e) {
-      print('Google Sign-In initialization failed: $e');
-      setState(() {
-        _isGoogleInitialized = true; // Still allow UI, but sign-in might fail
-      });
-      // Consider showing an error to the user if initialization is critical
-      _showErrorDialog('Google Sign-In initialization failed. Please ensure your configuration is correct.');
-    }
   }
 
   @override
@@ -94,6 +49,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     _phoneController.dispose();
     _emailFocusNode.dispose();
     _phoneFocusNode.dispose();
+    _otpController.dispose();
     super.dispose();
   }
 
@@ -140,7 +96,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         text: 'Sign Up',
                         color: const Color(0xFFF2B200),
                         textColor: Colors.black,
-                        onPressed: () => Navigator.pushNamed(context, '/phone-input'), // Example navigation
+                        onPressed: () => Navigator.pushNamed(context, '/phone-input'),
                       ),
                     ],
                   ),
@@ -422,9 +378,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             children: [
               GestureDetector(
                 // Disable if Google Sign-In is not initialized
-                onTap: _isGoogleInitialized ? _handleGoogleSignIn : null,
+                onTap: _handleGoogleSignIn,
                 child: Opacity(
-                  opacity: _isGoogleInitialized ? 1.0 : 0.5, // Visually indicate disabled state
+                  opacity: 1, // Visually indicate disabled state
                   child: const _SocialCircle(icon: FontAwesomeIcons.google),
                 ),
               ),
@@ -459,10 +415,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         );
 
         if (credential.user != null) {
-          _showSuccessDialog('Login Successful', 'Welcome back!');
-          // Navigate to home screen
-          // Ensure you have a route named '/home' defined in your MaterialApp
-          Navigator.pushReplacementNamed(context, '/home');
+          final userDoc = FirebaseFirestore.instance.collection('users').where('email', isEqualTo: _emailController.text.trim());
+          final docSnapshots = await userDoc.get();
+          if (mounted && docSnapshots.docs.isNotEmpty) {
+            final user = UserDocDto.fromJson(docSnapshots.docs.first.data());
+            ref.read(userStateProvider.notifier).signInUser(user);
+            Navigator.pushReplacementNamed(context, RouteNames.homeScreen);
+          } else {
+            if(mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('User not found. Please sign up first.')),
+              );
+            }
+          }
         }
       }
     } on FirebaseAuthException catch (e) {
@@ -485,8 +450,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         // Auto-verification (Android only)
         final userCredential = await auth.signInWithCredential(credential);
         if (userCredential.user != null) {
-          _showSuccessDialog('Login Successful', 'Phone verified automatically!');
-          Navigator.pushReplacementNamed(context, '/home');
+          final userDoc = FirebaseFirestore.instance.collection('users').doc(userCredential.user!.uid);
+          final docSnapshot = await userDoc.get();
+          if (mounted && docSnapshot.exists) {
+            final user = UserDocDto.fromJson(docSnapshot.data()!);
+            ref.read(userStateProvider.notifier).signInUser(user);
+            Navigator.pushReplacementNamed(context, RouteNames.homeScreen);
+          } else {
+            if(mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('User not found. Please sign up first.')),
+              );
+            }
+          }
         }
       },
       verificationFailed: (FirebaseAuthException e) {
@@ -503,11 +479,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _handleGoogleSignIn() async {
-    if (!_isGoogleInitialized) {
-      _showErrorDialog('Google Sign-In is not initialized yet. Please wait or check configuration.');
-      return;
-    }
-
     setState(() => _isLoading = true); // Indicate loading for Google sign-in as well
 
     try {
@@ -517,13 +488,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       // Use the new authenticate method. This will open the Google sign-in UI.
       // It returns the GoogleSignInAccount directly on success.
       final GoogleSignInAccount? googleUser = await googleSignIn.authenticate();
-
-      if (googleUser == null) {
-        // User cancelled the sign-in flow
-        print('Google Sign-In cancelled by user.');
-        return;
+    if (googleUser == null) {
+      // User cancelled the sign-in process
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Google sign-in was cancelled.')),
+        );
       }
-
+      return;
+    }
       // Get authentication details from the signed-in Google user
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
       
@@ -537,22 +510,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       final userCredential = await auth.signInWithCredential(credential);
       
       if (userCredential.user != null) {
-        _showSuccessDialog('Login Successful', 'Welcome ${userCredential.user!.displayName ?? 'User'}!');
-        // Navigate to your home screen
-        Navigator.pushReplacementNamed(context, '/home');
+        final userDoc = FirebaseFirestore.instance.collection('users').where('email', isEqualTo: userCredential.user!.email);
+        final docSnapshot = await userDoc.get();
+        if (mounted && docSnapshot.docs.isNotEmpty) {
+          final user = UserDocDto.fromJson(docSnapshot.docs.first.data());
+          ref.read(userStateProvider.notifier).signInUser(user);
+          Navigator.pushReplacementNamed(context, RouteNames.homeScreen);
+        }
       }
-    } on GoogleSignInException catch (e) {
-      // Specific handling for Google Sign-In errors
-      print('Google Sign-In Exception: ${e.code.name} - ${e.description}');
-      _showErrorDialog('Google sign-in failed: ${e.description ?? 'An unknown error occurred.'}');
-    } on FirebaseAuthException catch (e) {
-      // Handling Firebase Auth specific errors that might occur after getting Google credentials
-      print('Firebase Auth Exception during Google Sign-In: ${e.code}');
-      _showErrorDialog(_getAuthErrorMessage(e.code));
     } catch (e) {
-      // Catch any other unexpected errors
-      print('Unexpected Google Sign-In Error: $e');
       _showErrorDialog('Google sign-in failed. Please try again.');
+      print('Google Sign-In Error: $e'); // For debugging
     } finally {
       setState(() => _isLoading = false); // Stop loading regardless of outcome
     }
@@ -560,8 +528,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
 
   void _showOTPDialog() {
-    final otpController = TextEditingController();
-    
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -574,7 +540,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             Text('Enter the verification code sent to $_selectedCountryCode${_phoneController.text}'),
             const SizedBox(height: 20),
             TextField(
-              controller: otpController,
+              controller: _otpController,
               keyboardType: TextInputType.number,
               maxLength: 6,
               decoration: const InputDecoration(
@@ -590,7 +556,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            onPressed: () => _verifyOTP(otpController.text, context),
+            onPressed: () => _verifyOTP(_otpController.text, context),
             child: const Text('Verify'),
           ),
         ],
@@ -608,40 +574,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
       final userCredential = await auth.signInWithCredential(credential);
       if (userCredential.user != null) {
-        Navigator.pop(dialogContext); // Close OTP dialog
-        _showSuccessDialog('Login Successful', 'Phone verified successfully!');
-        Navigator.pushReplacementNamed(context, '/home');
+        if (dialogContext.mounted) { // Close OTP dialog
+          Navigator.pop(dialogContext);
+        }
+        final userDoc = FirebaseFirestore.instance.collection('users').doc(userCredential.user!.uid);
+        final docSnapshot = await userDoc.get();
+        if (mounted && docSnapshot.exists) {
+          final user = UserDocDto.fromJson(docSnapshot.data()!);
+            ref.read(userStateProvider.notifier).signInUser(user);
+            Navigator.pushReplacementNamed(context, RouteNames.homeScreen);
+        }
       }
-    } on FirebaseAuthException catch (e) {
-      Navigator.pop(dialogContext);
-      _showErrorDialog(_getAuthErrorMessage(e.code));
     } catch (e) {
-      Navigator.pop(dialogContext);
+      print('OTP Verification Error: $e'); // For debugging
+      if (dialogContext.mounted) {
+        Navigator.pop(dialogContext);
+      }
       _showErrorDialog('An unexpected error occurred during OTP verification. Please try again.');
     }
-  }
-
-  void _showSuccessDialog(String title, String message) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            const Icon(Icons.check_circle, color: Color(0xFF0D3C34), size: 28),
-            const SizedBox(width: 10),
-            Text(title, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0D3C34))),
-          ],
-        ),
-        content: Text(message, style: const TextStyle(fontSize: 16)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK', style: TextStyle(color: Color(0xFF0D3C34), fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
-    );
   }
 
   void _showErrorDialog(String message) {

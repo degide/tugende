@@ -4,6 +4,8 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:async';
 
+import 'package:tugende/config/routes_config.dart';
+
 class EmailVerificationScreen extends ConsumerStatefulWidget {
   const EmailVerificationScreen({super.key});
 
@@ -78,12 +80,11 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
       
       _showSuccessSnackBar('Email verified successfully! Redirecting to login...');
       
-      // Wait a moment for the user to see the success message, then navigate
       Future.delayed(const Duration(seconds: 2), () {
         if (mounted) {
           Navigator.pushNamedAndRemoveUntil(
             context, 
-            '/login',
+            RouteNames.loginScreen,
             (route) => false,
           );
         }

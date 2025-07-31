@@ -33,7 +33,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
   final CarouselSliderController _controller = CarouselSliderController();
 
   void _navigateToNext() async {
-    Navigator.pushNamed(context, '/verification');
+    Navigator.pushNamed(context, '/login');
   }
 
   @override
