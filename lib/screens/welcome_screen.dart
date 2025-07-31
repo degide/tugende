@@ -88,6 +88,10 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
     ];
 
     return Scaffold(
+      appBar: AppBar(
+        toolbarHeight: 0,
+        backgroundColor: Colors.grey.shade100,
+      ),
       backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(

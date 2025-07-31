@@ -16,8 +16,6 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   void _initAppState() async {
-    //TODO: Initialize any necessary app state here, such as loading user preferences or checking authentication status.
-    // For demonstration, we will just wait for 2 seconds before navigating to the WelcomeScreen
     await Future.delayed(Duration(seconds: 2));
     if (mounted) {
       Navigator.pushReplacementNamed(
