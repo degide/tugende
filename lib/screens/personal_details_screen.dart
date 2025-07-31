@@ -1,5 +1,14 @@
- import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+// Providers for Firebase services
+final firebaseAuthProvider = Provider<FirebaseAuth>((ref) => FirebaseAuth.instance);
+final firestoreProvider = Provider<FirebaseFirestore>((ref) => FirebaseFirestore.instance);
+
+// State provider for loading states
+final isLoadingProvider = StateProvider<bool>((ref) => false);
 
 class PersonalDetailsScreen extends ConsumerStatefulWidget {
   const PersonalDetailsScreen({super.key});
@@ -44,32 +53,135 @@ class _PersonalDetailsScreenState extends ConsumerState<PersonalDetailsScreen> {
     }
   }
 
-  void _confirmInformation() {
-    // Validate form
-    if (_fullNameController.text.isEmpty ||
-        _emailController.text.isEmpty ||
+  Future<void> _createUserAccount() async {
+    final auth = ref.read(firebaseAuthProvider);
+    final firestore = ref.read(firestoreProvider);
+
+    try {
+      // Create user with email and password
+      final userCredential = await auth.createUserWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
+
+      final user = userCredential.user;
+      if (user != null) {
+        // Save user data to Firestore
+        await firestore.collection('users').doc(user.uid).set({
+          'fullName': _fullNameController.text.trim(),
+          'email': _emailController.text.trim(),
+          'gender': _selectedGender,
+          'dateOfBirth': _selectedDate?.toIso8601String(),
+          'createdAt': FieldValue.serverTimestamp(),
+          'emailVerified': false,
+        });
+
+        // Update user profile
+        await user.updateDisplayName(_fullNameController.text.trim());
+
+        // Send email verification
+        await user.sendEmailVerification();
+
+        // Navigate to email verification screen
+        if (mounted) {
+          Navigator.pushNamed(context, '/email-verification');
+        }
+      }
+    } on FirebaseAuthException catch (e) {
+      String errorMessage;
+      switch (e.code) {
+        case 'weak-password':
+          errorMessage = 'The password provided is too weak.';
+          break;
+        case 'email-already-in-use':
+          errorMessage = 'An account already exists for this email.';
+          break;
+        case 'invalid-email':
+          errorMessage = 'The email address is not valid.';
+          break;
+        default:
+          errorMessage = 'An error occurred: ${e.message}';
+      }
+      _showErrorSnackBar(errorMessage);
+    } catch (e) {
+      _showErrorSnackBar('An unexpected error occurred: $e');
+    }
+  }
+
+  void _showErrorSnackBar(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  void _showSuccessSnackBar(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
+  }
+
+  bool _validateForm() {
+    if (_fullNameController.text.trim().isEmpty ||
+        _emailController.text.trim().isEmpty ||
         _passwordController.text.isEmpty ||
         _confirmPasswordController.text.isEmpty ||
         _selectedDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill in all fields')),
-      );
-      return;
+      _showErrorSnackBar('Please fill in all fields');
+      return false;
     }
 
     if (_passwordController.text != _confirmPasswordController.text) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Passwords do not match')),
-      );
-      return;
+      _showErrorSnackBar('Passwords do not match');
+      return false;
     }
 
-    // Navigate to email verification
-    Navigator.pushNamed(context, '/email-verification');
+    if (_passwordController.text.length < 6) {
+      _showErrorSnackBar('Password must be at least 6 characters long');
+      return false;
+    }
+
+    if (!_emailController.text.contains('@')) {
+      _showErrorSnackBar('Please enter a valid email address');
+      return false;
+    }
+
+    // Check if user is at least 13 years old
+    final age = DateTime.now().difference(_selectedDate!).inDays ~/ 365;
+    if (age < 13) {
+      _showErrorSnackBar('You must be at least 13 years old to register');
+      return false;
+    }
+
+    return true;
+  }
+
+  Future<void> _confirmInformation() async {
+    if (!_validateForm()) return;
+
+    ref.read(isLoadingProvider.notifier).state = true;
+
+    try {
+      await _createUserAccount();
+      _showSuccessSnackBar('Account created successfully! Please verify your email.');
+    } finally {
+      ref.read(isLoadingProvider.notifier).state = false;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final isLoading = ref.watch(isLoadingProvider);
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -92,9 +204,9 @@ class _PersonalDetailsScreenState extends ConsumerState<PersonalDetailsScreen> {
                         Row(
                           children: [
                             IconButton(
-                              onPressed: () => Navigator.pop(context),
+                              onPressed: isLoading ? null : () => Navigator.pop(context),
                               icon: const Icon(Icons.arrow_back),
-                              padding: EdgeInsets.all(10),
+                              padding: const EdgeInsets.all(10),
                               constraints: const BoxConstraints(),
                             ),
                             const SizedBox(width: 10),
@@ -104,10 +216,6 @@ class _PersonalDetailsScreenState extends ConsumerState<PersonalDetailsScreen> {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 15),
-                        
-                        // Profile picture section
-                        _buildProfileSection(),
                         const SizedBox(height: 30),
                         
                         // Form fields
@@ -115,6 +223,7 @@ class _PersonalDetailsScreenState extends ConsumerState<PersonalDetailsScreen> {
                           controller: _fullNameController,
                           label: 'Full name',
                           icon: Icons.person,
+                          enabled: !isLoading,
                         ),
                         const SizedBox(height: 15),
                         
@@ -123,6 +232,7 @@ class _PersonalDetailsScreenState extends ConsumerState<PersonalDetailsScreen> {
                           label: 'Enter your email',
                           icon: Icons.email,
                           keyboardType: TextInputType.emailAddress,
+                          enabled: !isLoading,
                         ),
                         const SizedBox(height: 15),
                         
@@ -134,9 +244,10 @@ class _PersonalDetailsScreenState extends ConsumerState<PersonalDetailsScreen> {
                         
                         _buildPasswordField(
                           controller: _passwordController,
-                          label: 'Password',
+                          label: 'Password (min 6 characters)',
                           obscureText: _obscurePassword,
                           onToggle: () => setState(() => _obscurePassword = !_obscurePassword),
+                          enabled: !isLoading,
                         ),
                         const SizedBox(height: 15),
                         
@@ -145,10 +256,11 @@ class _PersonalDetailsScreenState extends ConsumerState<PersonalDetailsScreen> {
                           label: 'Confirm Password',
                           obscureText: _obscureConfirmPassword,
                           onToggle: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+                          enabled: !isLoading,
                         ),
                         const SizedBox(height: 30),
                         
-                        _buildActionButton(),
+                        _buildActionButton(isLoading),
                       ],
                     ),
                   ),
@@ -161,52 +273,17 @@ class _PersonalDetailsScreenState extends ConsumerState<PersonalDetailsScreen> {
     );
   }
 
-
-
-  Widget _buildProfileSection() {
-    return Center(
-      child: Stack(
-        children: [
-          CircleAvatar(
-            radius: 50,
-            backgroundColor: Colors.grey[300],
-            child: const Icon(
-              Icons.person,
-              size: 50,
-              color: Colors.grey,
-            ),
-          ),
-          Positioned(
-            bottom: 0,
-            right: 0,
-            child: Container(
-              padding: const EdgeInsets.all(4),
-              decoration: const BoxDecoration(
-                color: Color(0xFF0D3C34),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.edit,
-                color: Colors.white,
-                size: 16,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildInputField({
     required TextEditingController controller,
     required String label,
     required IconData icon,
     TextInputType? keyboardType,
+    bool enabled = true,
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: enabled ? Colors.white : Colors.grey[100],
         borderRadius: BorderRadius.circular(15),
       ),
       child: Row(
@@ -215,6 +292,7 @@ class _PersonalDetailsScreenState extends ConsumerState<PersonalDetailsScreen> {
             child: TextField(
               controller: controller,
               keyboardType: keyboardType,
+              enabled: enabled,
               decoration: InputDecoration(
                 hintText: label,
                 border: InputBorder.none,
@@ -230,10 +308,12 @@ class _PersonalDetailsScreenState extends ConsumerState<PersonalDetailsScreen> {
   }
 
   Widget _buildDropdownField() {
+    final isLoading = ref.watch(isLoadingProvider);
+    
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isLoading ? Colors.grey[100] : Colors.white,
         borderRadius: BorderRadius.circular(15),
       ),
       child: Row(
@@ -249,7 +329,7 @@ class _PersonalDetailsScreenState extends ConsumerState<PersonalDetailsScreen> {
                     child: Text(gender),
                   );
                 }).toList(),
-                onChanged: (String? newValue) {
+                onChanged: isLoading ? null : (String? newValue) {
                   setState(() {
                     _selectedGender = newValue!;
                   });
@@ -257,9 +337,6 @@ class _PersonalDetailsScreenState extends ConsumerState<PersonalDetailsScreen> {
               ),
             ),
           ),
-        //   const SizedBox(width: 12),
-        //     Icon(Icons.person_outline, color: Colors.grey[600]),
-        //   const SizedBox(width: 8),
           const Icon(Icons.arrow_drop_down),
         ],
       ),
@@ -267,12 +344,14 @@ class _PersonalDetailsScreenState extends ConsumerState<PersonalDetailsScreen> {
   }
 
   Widget _buildDateField() {
+    final isLoading = ref.watch(isLoadingProvider);
+    
     return GestureDetector(
-      onTap: () => _selectDate(context),
+      onTap: isLoading ? null : () => _selectDate(context),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isLoading ? Colors.grey[100] : Colors.white,
           borderRadius: BorderRadius.circular(15),
         ),
         child: Row(
@@ -300,11 +379,12 @@ class _PersonalDetailsScreenState extends ConsumerState<PersonalDetailsScreen> {
     required String label,
     required bool obscureText,
     required VoidCallback onToggle,
+    bool enabled = true,
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: enabled ? Colors.white : Colors.grey[100],
         borderRadius: BorderRadius.circular(15),
       ),
       child: Row(
@@ -313,6 +393,7 @@ class _PersonalDetailsScreenState extends ConsumerState<PersonalDetailsScreen> {
             child: TextField(
               controller: controller,
               obscureText: obscureText,
+              enabled: enabled,
               decoration: InputDecoration(
                 hintText: label,
                 border: InputBorder.none,
@@ -321,10 +402,8 @@ class _PersonalDetailsScreenState extends ConsumerState<PersonalDetailsScreen> {
             ),
           ),
           const SizedBox(width: 12),
-        //   Icon(Icons.lock_outline, color: Colors.grey[600]),
-        //   const SizedBox(width: 8),
           IconButton(
-            onPressed: onToggle,
+            onPressed: enabled ? onToggle : null,
             icon: Icon(
               obscureText ? Icons.visibility : Icons.visibility_off,
               color: Colors.grey[600],
@@ -337,11 +416,11 @@ class _PersonalDetailsScreenState extends ConsumerState<PersonalDetailsScreen> {
     );
   }
 
-  Widget _buildActionButton() {
+  Widget _buildActionButton(bool isLoading) {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: _confirmInformation,
+        onPressed: isLoading ? null : _confirmInformation,
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF0D3C34),
           foregroundColor: Colors.white,
@@ -351,14 +430,30 @@ class _PersonalDetailsScreenState extends ConsumerState<PersonalDetailsScreen> {
           ),
           elevation: 0,
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text('Confirm Information'),
-            const SizedBox(width: 10, height: 20),
-            const Icon(Icons.arrow_forward),
-          ],
-        ),
+        child: isLoading
+            ? const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  ),
+                  SizedBox(width: 10),
+                  Text('Creating Account...'),
+                ],
+              )
+            : const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text('Confirm Information'),
+                  SizedBox(width: 10),
+                  Icon(Icons.arrow_forward),
+                ],
+              ),
       ),
     );
   }

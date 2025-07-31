@@ -4,7 +4,8 @@ class ThemeConfig {
   static final ThemeData lightTheme = ThemeData(
     brightness: Brightness.light,
     primaryColor: Color(0xFF143A37),
-    scaffoldBackgroundColor: Color(0xFF143A37),
+    scaffoldBackgroundColor: Colors.white,
+    useMaterial3: true,
     appBarTheme: AppBarTheme(
       backgroundColor: Colors.white,
       titleTextStyle: TextStyle(color: Colors.black, fontSize: 20),
@@ -28,6 +29,7 @@ class ThemeConfig {
     brightness: Brightness.dark,
     primaryColor: Color(0xFF143A37),
     scaffoldBackgroundColor: Color(0xFF1E1E1E),
+    useMaterial3: true,
     appBarTheme: AppBarTheme(
       backgroundColor: Color(0xFF1E1E1E),
       titleTextStyle: TextStyle(color: Colors.white, fontSize: 20),
