@@ -63,11 +63,11 @@ class _VerificationScreenState extends ConsumerState<VerificationScreen> {
                       // Social Login Buttons
                       _buildSocialButton('Continue with Google', FontAwesomeIcons.google, Color(0xFF0D3C34)),
                       const SizedBox(height: 12),
-                      _buildSocialButton('Continue with Facebook', FontAwesomeIcons.facebookF, Color(0xFF0D3C34)),
-                      const SizedBox(height: 12),
-                      _buildSocialButton('Continue with X(twitter)', FontAwesomeIcons.xTwitter, Color(0xFF0D3C34)),
-                      const SizedBox(height: 12),
-                      _buildSocialButton('Continue with Apple', FontAwesomeIcons.apple, Colors.black),
+                      // _buildSocialButton('Continue with Facebook', FontAwesomeIcons.facebookF, Color(0xFF0D3C34)),
+                      // const SizedBox(height: 12),
+                      // _buildSocialButton('Continue with X(twitter)', FontAwesomeIcons.xTwitter, Color(0xFF0D3C34)),
+                      // const SizedBox(height: 12),
+                      // _buildSocialButton('Continue with Apple', FontAwesomeIcons.apple, Colors.black),
 
                       const SizedBox(height: 30),
 
@@ -97,7 +97,7 @@ class _VerificationScreenState extends ConsumerState<VerificationScreen> {
     );
   }
 
-  Widget _buildSocialButton(String text, IconData icon, Color iconColor, {bool fill = false}) {
+  Widget _buildSocialButton(String text, IconData icon, Color iconColor) {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
