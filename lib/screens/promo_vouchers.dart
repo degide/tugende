@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:tugende/screens/tabs/payment_method.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:tugende/screens/payment_method.dart';
 
 // Promos / Vouchers Screen
 class PromosVouchersScreen extends StatefulWidget {
   final String fromLocation;
   final String toLocation;
   final String driverName;
+  final String driverProfileImage;
   final double price;
 
   const PromosVouchersScreen({
@@ -13,6 +15,7 @@ class PromosVouchersScreen extends StatefulWidget {
     required this.fromLocation,
     required this.toLocation,
     required this.driverName,
+    required this.driverProfileImage,
     required this.price,
   });
 
@@ -62,6 +65,7 @@ class _PromosVouchersScreenState extends State<PromosVouchersScreen> {
             fromLocation: widget.fromLocation,
             toLocation: widget.toLocation,
             driverName: widget.driverName,
+            driverProfileImage: widget.driverProfileImage,
             price: widget.price,
             appliedPromo: _selectedPromo ?? _promoController.text,
           ),
@@ -299,7 +303,6 @@ class _PromosVouchersScreenState extends State<PromosVouchersScreen> {
   }
 }
 
-// Data Models
 class PromoCode {
   final String title;
   final String description;

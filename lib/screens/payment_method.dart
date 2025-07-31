@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:tugende/config/routes_config.dart';
 
-// Payment Method Screen
 class PaymentMethodScreen extends StatefulWidget {
   final String fromLocation;
   final String toLocation;
   final String driverName;
+  final String driverProfileImage;
   final double price;
   final String? appliedPromo;
 
@@ -13,6 +15,7 @@ class PaymentMethodScreen extends StatefulWidget {
     required this.fromLocation,
     required this.toLocation,
     required this.driverName,
+    required this.driverProfileImage,
     required this.price,
     this.appliedPromo,
   });
@@ -67,37 +70,120 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
     });
   }
 
-  void _confirmPayment() {
-    // Navigate to next screen or show confirmation
+  void _confirmPayment() async {
+    try {
+      // Save booking to Firebase Firestore
+      await _saveBookingToFirestore();
+
+      // Show booking confirmation modal
+      _showBookingConfirmationModal();
+    } catch (e) {
+      // Handle error
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error creating booking: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _saveBookingToFirestore() async {
+    final FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+    final bookingData = {
+      'driverName': widget.driverName,
+      'driverPictureUrl': widget.driverProfileImage,
+      'fromLocation': widget.fromLocation,
+      'toLocation': widget.toLocation,
+      'price': widget.price,
+      'paymentMethod': _selectedPaymentMethod,
+      'appliedPromo': widget.appliedPromo,
+      'bookingDate': FieldValue.serverTimestamp(),
+      'status': 'requested', // pending, confirmed, completed, cancelled
+    };
+
+    await firestore.collection('bookings').add(bookingData);
+  }
+
+  void _showBookingConfirmationModal() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      barrierDismissible: false,
+      builder: (context) => Dialog(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
         ),
-        title: const Text('Payment Confirmed'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Payment Method: $_selectedPaymentMethod'),
-            if (widget.appliedPromo != null)
-              Text('Promo Applied: ${widget.appliedPromo}'),
-            Text('Amount: ${widget.price.toStringAsFixed(0)} RWF'),
-          ],
-        ),
-        actions: [
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              // Navigate to booking confirmation screen
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF2F5D5A),
-            ),
-            child: const Text('OK', style: TextStyle(color: Colors.white)),
+        child: Container(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Success Icon
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF2F5D5A),
+                  borderRadius: BorderRadius.circular(40),
+                ),
+                child: const Icon(
+                  Icons.check,
+                  color: Colors.white,
+                  size: 40,
+                ),
+              ),
+              const SizedBox(height: 24),
+              // Title
+              const Text(
+                'Booking Requested!',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black,
+                ),
+              ),
+              const SizedBox(height: 12),
+              // Description
+              const Text(
+                'We\'ve received your ride request! We\'ll let you know once your driver accepts.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 32),
+              // View My Rides Button
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(); // Close dialog
+                    Navigator.pushNamed(context, RouteNames.homeScreen); // Go to home screen
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFE5B429),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(26),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: const Text(
+                    'View My Rides',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -253,6 +339,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
     );
   }
 }
+
 
 class PaymentMethod {
   final String name;

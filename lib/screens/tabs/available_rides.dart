@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:tugende/screens/tabs/promo_vouchers.dart';
-import 'promo_vouchers.dart';
+import '../promo_vouchers.dart';
 
 class AvailableRidesScreen extends StatefulWidget {
   final String fromLocation;
@@ -79,6 +78,7 @@ class _AvailableRidesScreenState extends State<AvailableRidesScreen> {
           fromLocation: widget.fromLocation,
           toLocation: widget.toLocation,
           driverName: driver.name,
+          driverProfileImage: driver.profileImage,
           price: driver.price,
         ),
       ),
