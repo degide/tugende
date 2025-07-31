@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -27,8 +28,24 @@ class _NavItem {
 }
 
 class _ProfileTabState extends ConsumerState<ProfileTab> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final TextEditingController _currentPasswordController = TextEditingController();
+  final TextEditingController _newPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController = TextEditingController();
+
+  @override
+  void dispose() {
+    _newPasswordController.dispose();
+    _confirmPasswordController.dispose();
+    _currentPasswordController.dispose();
+    _formKey.currentState?.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final userState = ref.watch(userStateProvider);
+
     final List<_NavItem> navItems = [
       _NavItem(
         title: 'User Profile',
@@ -116,9 +133,12 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
                                 ),
                                 const SizedBox(height: 5.0),
                                 Text(
-                                  'Mutoni Denyse',
+                                  userState.user?.fullName ??
+                                      userState.user?.email ??
+                                      '',
                                   style: Theme.of(context).textTheme.titleLarge
                                       ?.copyWith(color: Colors.black),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ],
                             ),
@@ -238,10 +258,51 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
     try {
       FirebaseAuth.instance.signOut();
       GoogleSignIn.instance.signOut();
-    // ignore: empty_catches
+      // ignore: empty_catches
     } catch (e) {}
     ref.read(userStateProvider.notifier).signOutUser();
     Navigator.pushReplacementNamed(context, RouteNames.loginScreen);
+  }
+
+  Future<void> _updatePassword() async {
+    if (_formKey.currentState?.validate() ?? false) {
+      //update password logic here using FirebaseAuth signInWithEmailAndPassword
+      try {
+        final user = FirebaseAuth.instance.currentUser;
+        if (user == null) {
+          if (kDebugMode) {
+            print('No user is currently signed in.');
+          }
+          return;
+        }
+        //reauthenticate the user if necessary
+        await user.reauthenticateWithCredential(
+          EmailAuthProvider.credential(
+            email: ref.read(userStateProvider).user?.email ?? '',
+            password: _currentPasswordController.text.trim(),
+          ),
+        );
+        await user.updatePassword(_newPasswordController.text.trim());
+        _newPasswordController.clear();
+        _confirmPasswordController.clear();
+        _currentPasswordController.clear();
+        if(mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Password updated successfully')),
+          );
+          Navigator.of(context).pop(); // Close the dialog
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('Error updating password: $e');
+        }
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to update password. Check your current password and try again.')),
+          );
+        }
+      }
+    }
   }
 
   void _showChangePasswordDialog() {
@@ -251,75 +312,122 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
         //password input and confirm password input, save changes and cancel changes buttons
         return AlertDialog(
           title: const Text('Change Password'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                obscureText: true,
-                decoration: InputDecoration(
-                  hintText: 'New Password',
-                  filled: true,
-                  fillColor: Colors.grey[200],
-                  hintStyle: TextStyle(color: Colors.grey[600]),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10.0),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10.0),
-              TextField(
-                obscureText: true,
-                decoration: InputDecoration(
-                  hintText: 'Confirm Password',
-                  filled: true,
-                  fillColor: Colors.grey[200],
-                  hintStyle: TextStyle(color: Colors.grey[600]),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10.0),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20.0),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).primaryColor,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30.0),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20.0,
-                      vertical: 12.0,
+          content: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: _currentPasswordController,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter your current password';
+                    }
+                    if (value.length < 6) {
+                      return 'Password must be at least 6 characters';
+                    }
+                    return null;
+                  },
+                  obscureText: true,
+                  decoration: InputDecoration(
+                    hintText: 'Current Password',
+                    filled: true,
+                    fillColor: Colors.grey[200],
+                    hintStyle: TextStyle(color: Colors.grey[600]),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10.0),
+                      borderSide: BorderSide.none,
                     ),
                   ),
-                  child: const Text('Save Changes'),
                 ),
-              ),
-              const SizedBox(height: 8.0),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.secondary,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30.0),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20.0,
-                      vertical: 12.0,
+                const SizedBox(height: 10.0),
+                TextFormField(
+                  controller: _newPasswordController,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter a new password';
+                    }
+                    if (value.length < 6) {
+                      return 'Password must be at least 6 characters';
+                    }
+                    return null;
+                  },
+                  obscureText: true,
+                  decoration: InputDecoration(
+                    hintText: 'New Password',
+                    filled: true,
+                    fillColor: Colors.grey[200],
+                    hintStyle: TextStyle(color: Colors.grey[600]),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10.0),
+                      borderSide: BorderSide.none,
                     ),
                   ),
-                  child: const Text('Cancel'),
                 ),
-              ),
-            ],
+                const SizedBox(height: 10.0),
+                TextFormField(
+                  controller: _confirmPasswordController,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please confirm your password';
+                    }
+                    if (value != _newPasswordController.text) {
+                      return 'Passwords do not match';
+                    }
+                    return null;
+                  },
+                  obscureText: true,
+                  decoration: InputDecoration(
+                    hintText: 'Confirm Password',
+                    filled: true,
+                    fillColor: Colors.grey[200],
+                    hintStyle: TextStyle(color: Colors.grey[600]),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10.0),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20.0),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _updatePassword,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).primaryColor,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30.0),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20.0,
+                        vertical: 12.0,
+                      ),
+                    ),
+                    child: const Text('Save Changes'),
+                  ),
+                ),
+                const SizedBox(height: 8.0),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.secondary,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30.0),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20.0,
+                        vertical: 12.0,
+                      ),
+                    ),
+                    child: const Text('Cancel'),
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       },

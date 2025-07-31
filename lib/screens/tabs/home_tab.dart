@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tugende/config/routes_config.dart';
+import 'package:tugende/providers/auth_provider.dart';
 
-class HomeTab extends StatefulWidget {
+class HomeTab extends ConsumerStatefulWidget {
   const HomeTab({super.key});
 
   @override
-  State<HomeTab> createState() => _HomeTabState();
+  ConsumerState<HomeTab> createState() => _HomeTabState();
 }
 
 class _StatItem {
@@ -19,7 +22,7 @@ class _StatItem {
   });
 }
 
-class _HomeTabState extends State<HomeTab> {
+class _HomeTabState extends ConsumerState<HomeTab> {
   final List<_StatItem> _statItems = [
     _StatItem(
       value: 12,
@@ -45,6 +48,8 @@ class _HomeTabState extends State<HomeTab> {
 
   @override
   Widget build(BuildContext context) {
+    final userState = ref.watch(userStateProvider);
+
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
@@ -72,7 +77,7 @@ class _HomeTabState extends State<HomeTab> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            'Hi, Denyse!',
+                            'Hi ${userState.user?.fullName?.split(" ").reversed.elementAt(0) ?? userState.user?.email}',
                             style: Theme.of(
                               context,
                             ).textTheme.titleMedium?.copyWith(
@@ -80,6 +85,7 @@ class _HomeTabState extends State<HomeTab> {
                               fontWeight: FontWeight.bold,
                               color: Colors.black,
                             ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                           Text(
                             'Ready for your next ride?',
@@ -227,7 +233,12 @@ class _HomeTabState extends State<HomeTab> {
                           ),
                           Expanded(
                             child: ElevatedButton(
-                              onPressed: () {},
+                              onPressed: () {
+                                Navigator.pushNamed(
+                                  context,
+                                  RouteNames.redeemPromoScreen,
+                                );
+                              },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color.fromARGB(
                                   255,
