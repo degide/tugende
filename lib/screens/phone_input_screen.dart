@@ -24,7 +24,6 @@ class _PhoneInputScreenState extends ConsumerState<PhoneInputScreen> {
   final TextEditingController _phoneController = TextEditingController();
   String _selectedCountryCode = '+250'; // Default: Rwanda
   bool _agreedToTerms = false;
-  String? _verificationId;
 
   final Map<String, String> _countryCodes = {
     '+250': '🇷🇼', '+256': '🇺🇬', '+254': '🇰🇪',
@@ -94,7 +93,6 @@ class _PhoneInputScreenState extends ConsumerState<PhoneInputScreen> {
         },
         codeSent: (String verificationId, int? resendToken) {
           ref.read(loadingProvider.notifier).state = false;
-          _verificationId = verificationId;
           Navigator.pushNamed(
             context,
             '/otp-verification',
@@ -106,7 +104,6 @@ class _PhoneInputScreenState extends ConsumerState<PhoneInputScreen> {
           );
         },
         codeAutoRetrievalTimeout: (String verificationId) {
-          _verificationId = verificationId;
         },
       );
     } catch (e) {
