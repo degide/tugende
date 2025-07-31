@@ -26,7 +26,8 @@ class UserState {
 class UserStateNotifier extends StateNotifier<UserState> {
   UserStateNotifier(super.state);
 
-  void signInUser(UserDocDto? user, {bool isLoading = false}) {
+  void signInUser(UserDocDto user, {bool isLoading = false}) {
+    print('UserStateNotifier: signInUser called with user: ${user.toJson()}, isLoading: $isLoading');
     state = UserState(user, isLoading: isLoading);
   }
 

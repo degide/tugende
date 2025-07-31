@@ -1,43 +1,59 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tugende/config/routes_config.dart';
+import 'package:tugende/providers/auth_provider.dart';
 
-class HomeTab extends StatefulWidget {
+class HomeTab extends ConsumerStatefulWidget {
   const HomeTab({super.key});
 
   @override
-  State<HomeTab> createState() => _HomeTabState();
+  ConsumerState<HomeTab> createState() => _HomeTabState();
+}
+
+enum StatType {
+  bookedRides,
+  dayStreak,
+  appliedPromos,
+  totalTips,
 }
 
 class _StatItem {
+  final StatType type;
   final int value;
   final String image;
   final String description;
 
   _StatItem({
+    required this.type,
     required this.value,
     required this.image,
     required this.description,
   });
 }
 
-class _HomeTabState extends State<HomeTab> {
+class _HomeTabState extends ConsumerState<HomeTab> {
   final List<_StatItem> _statItems = [
     _StatItem(
-      value: 12,
+      type: StatType.bookedRides,
+      value: 0,
       image: 'assets/images/taxi_1.png',
       description: 'Booked Rides',
     ),
     _StatItem(
-      value: 7,
+      type: StatType.dayStreak,
+      value: 0,
       image: 'assets/images/taxi_2.png',
       description: 'Day Streak',
     ),
     _StatItem(
-      value: 5,
+      type: StatType.appliedPromos,
+      value: 0,
       image: 'assets/images/taxi_3.png',
       description: 'Applied Promos',
     ),
     _StatItem(
-      value: 10,
+      type: StatType.totalTips,
+      value: 0,
       image: 'assets/images/taxi_1.png',
       description: 'Total Tips',
     ),
@@ -45,6 +61,8 @@ class _HomeTabState extends State<HomeTab> {
 
   @override
   Widget build(BuildContext context) {
+    final userState = ref.watch(userStateProvider);
+
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
@@ -72,7 +90,7 @@ class _HomeTabState extends State<HomeTab> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            'Hi, Denyse!',
+                            'Hi ${userState.user?.fullName?.split(" ").reversed.elementAt(0) ?? userState.user?.email}',
                             style: Theme.of(
                               context,
                             ).textTheme.titleMedium?.copyWith(
@@ -80,6 +98,7 @@ class _HomeTabState extends State<HomeTab> {
                               fontWeight: FontWeight.bold,
                               color: Colors.black,
                             ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                           Text(
                             'Ready for your next ride?',
@@ -227,7 +246,12 @@ class _HomeTabState extends State<HomeTab> {
                           ),
                           Expanded(
                             child: ElevatedButton(
-                              onPressed: () {},
+                              onPressed: () {
+                                Navigator.pushNamed(
+                                  context,
+                                  RouteNames.redeemPromoScreen,
+                                );
+                              },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color.fromARGB(
                                   255,

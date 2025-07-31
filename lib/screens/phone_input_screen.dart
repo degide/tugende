@@ -98,7 +98,7 @@ class _PhoneInputScreenState extends ConsumerState<PhoneInputScreen> {
       if (mounted && docSnapshot.exists) {
         final user = UserDocDto.fromJson(docSnapshot.data()!);
         ref.read(userStateProvider.notifier).signInUser(user);
-        Navigator.pushReplacementNamed(context, RouteNames.homeScreen);
+        Navigator.pushNamedAndRemoveUntil(context, RouteNames.homeScreen, (route) => false);
       }
     } catch (e) {
       _showSnackBar('Sign-in failed');
