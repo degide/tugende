@@ -620,37 +620,44 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         smsCode: otp,
       );
 
-      final userCredential = await auth.signInWithCredential(credential);
-      if (userCredential.user != null) {
-        if (dialogContext.mounted) {
-          Navigator.pop(dialogContext); // Close OTP dialog
-        }
+    final userCredential = await auth.signInWithCredential(credential);
 
-        final userDoc = FirebaseFirestore.instance
-            .collection('users')
-            .doc(userCredential.user!.uid);
-        final docSnapshot = await userDoc.get();
-
-        if (mounted && docSnapshot.exists) {
-          final user = UserDocDto.fromJson(docSnapshot.data()!);
-          ref.read(userStateProvider.notifier).signInUser(user);
-          Navigator.pushNamedAndRemoveUntil(
-            context,
-            RouteNames.homeScreen,
-            (route) => false,
-          );
-        }
-      }
-    } catch (e) {
-      print('OTP Verification Error: $e'); // Debug logging
-      if (dialogContext.mounted) {
-        Navigator.pop(dialogContext);
-      }
-      _showErrorDialog('An unexpected error occurred during OTP verification. Please try again.');
+    if (userCredential.user != null) {
+      _showSuccessDialog('Login Successful', 'Phone verified successfully!');
+      // You can also navigate to home or another screen here
+      // Navigator.pushReplacementNamed(context, '/home');
     }
+  } on FirebaseAuthException catch (e) {
+    _showErrorDialog(_getAuthErrorMessage(e.code));
+  } catch (e) {
+    _showErrorDialog('An unexpected error occurred during OTP verification. Please try again.');
+  }
+}
+
+
+  void _showSuccessDialog(String title, String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            const Icon(Icons.check_circle, color: Color(0xFF0D3C34), size: 28),
+            const SizedBox(width: 10),
+            Text(title, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0D3C34))),
+          ],
+        ),
+        content: Text(message, style: const TextStyle(fontSize: 16)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK', style: TextStyle(color: Color(0xFF0D3C34), fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
   }
 
-  /// Shows error dialog with custom message
   void _showErrorDialog(String message) {
     showDialog(
       context: context,
