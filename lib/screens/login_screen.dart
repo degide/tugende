@@ -31,10 +31,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _isLoading = false;
   String? _verificationId;
 
+  // Country codes mapping with flags
   final Map<String, String> _countryCodes = {
-    '+250': '🇷🇼', '+256': '🇺🇬', '+254': '🇰🇪',
-    '+255': '🇹🇿', '+233': '🇬🇭', '+234': '🇳🇬',
-    '+27': '🇿🇦', '+1': '🇺🇸', '+44': '🇬🇧',
+    '+250': '🇷🇼',
+    '+256': '🇺🇬',
+    '+254': '🇰🇪',
+    '+255': '🇹🇿',
+    '+233': '🇬🇭',
+    '+234': '🇳🇬',
+    '+27': '🇿🇦',
+    '+1': '🇺🇸',
+    '+44': '🇬🇧',
   };
 
   @override
@@ -61,7 +68,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         child: Column(
           children: [
             _buildHeader(),
-
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
@@ -87,9 +93,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         color: const Color(0xFF0D3C34),
                         textColor: Colors.white,
                         isLoading: _isLoading,
-                        onPressed: _isFormValid()
-                            ? _handleLogin
-                            : null,
+                        onPressed: _isFormValid() ? _handleLogin : null,
                       ),
                       const SizedBox(height: 15),
                       _buildActionButton(
@@ -103,7 +107,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
               ),
             ),
-
             _buildFooter(),
           ],
         ),
@@ -111,8 +114,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
+  /// Builds the header section of the login screen
   Widget _buildHeader() => const SizedBox(height: 20);
 
+  /// Builds the title section with welcome message and taxi icon
   Widget _buildTitleSection() {
     return Row(
       children: [
@@ -139,11 +144,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             ],
           ),
         ),
-        Image.asset('assets/images/taxi_icon.png', width: 50, height: 50), // Ensure this asset exists
+        // Taxi icon asset
+        Image.asset('assets/images/taxi_icon.png', width: 50, height: 50),
       ],
     );
   }
 
+  /// Builds the toggle switch for selecting identifier type
   Widget _buildIdentifierToggle() {
     return Container(
       decoration: BoxDecoration(
@@ -160,6 +167,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
+  /// Builds individual toggle tab
   Widget _buildToggleTab(String label) {
     final isSelected = _selectedIdentifier == label;
     return Expanded(
@@ -189,6 +197,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
+  /// Builds the input section with animated transition
   Widget _buildInputSection() {
     return AnimatedCrossFade(
       duration: const Duration(milliseconds: 300),
@@ -206,6 +215,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
+  /// Builds phone number input with country code selector
   Widget _buildPhoneInput() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -251,6 +261,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
+  /// Builds email input field
   Widget _buildEmailInput() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -278,6 +289,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
+  /// Builds password input field with visibility toggle
   Widget _buildPasswordInput() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -309,6 +321,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
+  /// Builds remember me checkbox
   Widget _buildRememberMe() {
     return Row(
       children: [
@@ -322,6 +335,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
+  /// Builds action buttons (Sign In/Sign Up)
   Widget _buildActionButton({
     required String text,
     required Color color,
@@ -342,7 +356,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           ),
         ),
         child: isLoading
-            ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+            ? const SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
+                ),
+              )
             : Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -355,6 +376,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
+  /// Builds the footer section with social login options
   Widget _buildFooter() {
     return Container(
       width: double.infinity,
@@ -377,11 +399,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               GestureDetector(
-                // Disable if Google Sign-In is not initialized
                 onTap: _handleGoogleSignIn,
-                child: Opacity(
-                  opacity: 1, // Visually indicate disabled state
-                  child: const _SocialCircle(icon: FontAwesomeIcons.google),
+                child: const Opacity(
+                  opacity: 1,
+                  child: _SocialCircle(icon: FontAwesomeIcons.google),
                 ),
               ),
             ],
@@ -391,6 +412,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
+  /// Validates form inputs based on selected identifier
   bool _isFormValid() {
     if (_selectedIdentifier == 'Phone Number') {
       return _phoneController.text.isNotEmpty;
@@ -399,6 +421,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
+  /// Handles login process for both phone and email authentication
   Future<void> _handleLogin() async {
     setState(() => _isLoading = true);
 
@@ -415,14 +438,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         );
 
         if (credential.user != null) {
-          final userDoc = FirebaseFirestore.instance.collection('users').where('email', isEqualTo: _emailController.text.trim());
+          final userDoc = FirebaseFirestore.instance
+              .collection('users')
+              .where('email', isEqualTo: _emailController.text.trim());
           final docSnapshots = await userDoc.get();
+
           if (mounted && docSnapshots.docs.isNotEmpty) {
             final user = UserDocDto.fromJson(docSnapshots.docs.first.data());
             ref.read(userStateProvider.notifier).signInUser(user);
-            Navigator.pushNamedAndRemoveUntil(context, RouteNames.homeScreen, (route) => false);
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              RouteNames.homeScreen,
+              (route) => false,
+            );
           } else {
-            if(mounted) {
+            if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('User not found. Please sign up first.')),
               );
@@ -434,12 +464,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       _showErrorDialog(_getAuthErrorMessage(e.code));
     } catch (e) {
       _showErrorDialog('An unexpected error occurred. Please try again.');
-      print('Login Error: $e'); // For debugging
+      print('Login Error: $e'); // Debug logging
     } finally {
       setState(() => _isLoading = false);
     }
   }
 
+  /// Handles phone number authentication
   Future<void> _handlePhoneLogin() async {
     final auth = ref.read(firebaseAuthProvider);
     final phoneNumber = '$_selectedCountryCode${_phoneController.text.trim()}';
@@ -450,14 +481,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         // Auto-verification (Android only)
         final userCredential = await auth.signInWithCredential(credential);
         if (userCredential.user != null) {
-          final userDoc = FirebaseFirestore.instance.collection('users').doc(userCredential.user!.uid);
+          final userDoc = FirebaseFirestore.instance
+              .collection('users')
+              .doc(userCredential.user!.uid);
           final docSnapshot = await userDoc.get();
+
           if (mounted && docSnapshot.exists) {
             final user = UserDocDto.fromJson(docSnapshot.data()!);
             ref.read(userStateProvider.notifier).signInUser(user);
-            Navigator.pushNamedAndRemoveUntil(context, RouteNames.homeScreen, (route) => false);
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              RouteNames.homeScreen,
+              (route) => false,
+            );
           } else {
-            if(mounted) {
+            if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('User not found. Please sign up first.')),
               );
@@ -478,55 +516,64 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
+  /// Handles Google Sign-In authentication
   Future<void> _handleGoogleSignIn() async {
-    setState(() => _isLoading = true); // Indicate loading for Google sign-in as well
+    setState(() => _isLoading = true);
 
     try {
       final googleSignIn = ref.read(googleSignInProvider);
       final auth = ref.read(firebaseAuthProvider);
 
-      // Use the new authenticate method. This will open the Google sign-in UI.
-      // It returns the GoogleSignInAccount directly on success.
+      // Authenticate with Google
       final GoogleSignInAccount? googleUser = await googleSignIn.authenticate();
-    if (googleUser == null) {
-      // User cancelled the sign-in process
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Google sign-in was cancelled.')),
-        );
+
+      if (googleUser == null) {
+        // User cancelled the sign-in process
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Google sign-in was cancelled.')),
+          );
+        }
+        return;
       }
-      return;
-    }
-      // Get authentication details from the signed-in Google user 
+
+      // Get authentication details from the signed-in Google user
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-      
+
       // Create a Firebase credential using the Google ID token and access token
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.idToken,
         idToken: googleAuth.idToken,
       );
 
-      // Sign-in to Firebase with the Google credential 
+      // Sign-in to Firebase with the Google credential
       final userCredential = await auth.signInWithCredential(credential);
-      
+
       if (userCredential.user != null) {
-        final userDoc = FirebaseFirestore.instance.collection('users').where('email', isEqualTo: userCredential.user!.email);
+        final userDoc = FirebaseFirestore.instance
+            .collection('users')
+            .where('email', isEqualTo: userCredential.user!.email);
         final docSnapshot = await userDoc.get();
+
         if (mounted && docSnapshot.docs.isNotEmpty) {
           final user = UserDocDto.fromJson(docSnapshot.docs.first.data());
           ref.read(userStateProvider.notifier).signInUser(user);
-          Navigator.pushNamedAndRemoveUntil(context, RouteNames.homeScreen, (route) => false);
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            RouteNames.homeScreen,
+            (route) => false,
+          );
         }
       }
     } catch (e) {
       _showErrorDialog('Google sign-in failed. Please try again.');
-      print('Google Sign-In Error: $e'); // For debugging
+      print('Google Sign-In Error: $e'); // Debug logging
     } finally {
-      setState(() => _isLoading = false); // Stop loading regardless of outcome
+      setState(() => _isLoading = false);
     }
   }
 
-
+  /// Shows OTP verification dialog
   void _showOTPDialog() {
     showDialog(
       context: context,
@@ -564,6 +611,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
+  /// Verifies the OTP entered by the user
   Future<void> _verifyOTP(String otp, BuildContext dialogContext) async {
     try {
       final auth = ref.read(firebaseAuthProvider);
@@ -574,19 +622,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
       final userCredential = await auth.signInWithCredential(credential);
       if (userCredential.user != null) {
-        if (dialogContext.mounted) { // Close OTP dialog
-          Navigator.pop(dialogContext);
+        if (dialogContext.mounted) {
+          Navigator.pop(dialogContext); // Close OTP dialog
         }
-        final userDoc = FirebaseFirestore.instance.collection('users').doc(userCredential.user!.uid);
+
+        final userDoc = FirebaseFirestore.instance
+            .collection('users')
+            .doc(userCredential.user!.uid);
         final docSnapshot = await userDoc.get();
+
         if (mounted && docSnapshot.exists) {
           final user = UserDocDto.fromJson(docSnapshot.data()!);
-            ref.read(userStateProvider.notifier).signInUser(user);
-            Navigator.pushNamedAndRemoveUntil(context, RouteNames.homeScreen, (route) => false);
+          ref.read(userStateProvider.notifier).signInUser(user);
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            RouteNames.homeScreen,
+            (route) => false,
+          );
         }
       }
     } catch (e) {
-      print('OTP Verification Error: $e'); // For debugging
+      print('OTP Verification Error: $e'); // Debug logging
       if (dialogContext.mounted) {
         Navigator.pop(dialogContext);
       }
@@ -594,6 +650,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
+  /// Shows error dialog with custom message
   void _showErrorDialog(String message) {
     showDialog(
       context: context,
@@ -617,6 +674,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
+  /// Returns user-friendly error messages for Firebase Auth errors
   String _getAuthErrorMessage(String errorCode) {
     switch (errorCode) {
       case 'user-not-found':
@@ -643,8 +701,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 }
 
+/// Social media login button widget
 class _SocialCircle extends StatelessWidget {
   final IconData icon;
+
   const _SocialCircle({required this.icon});
 
   @override
@@ -656,7 +716,9 @@ class _SocialCircle extends StatelessWidget {
         border: Border.all(color: Colors.white),
         borderRadius: BorderRadius.circular(30),
       ),
-      child: Center(child: FaIcon(icon, color: Colors.white, size: 20)),
+      child: Center(
+        child: FaIcon(icon, color: Colors.white, size: 20),
+      ),
     );
   }
 }
