@@ -27,7 +27,7 @@ class _PhoneInputScreenState extends ConsumerState<PhoneInputScreen> {
     '+27': '🇿🇦', '+1': '🇺🇸', '+44': '🇬🇧',
   };
 
-  // Required scopes for Google Sign-In requires real device testing.
+  // Required scopes for Google Sign-In requires dddreal device testing.
   // 'openid' is often implicitly included or required for idToken.
   // static const List<String> _scopes = <String>[
   //   'email',
