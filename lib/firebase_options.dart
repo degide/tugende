@@ -72,4 +72,5 @@ class DefaultFirebaseOptions {
     iosClientId: '517026597072-9uhsl4pms5afchq28d88a1ieemknfp12.apps.googleusercontent.com',
     iosBundleId: 'com.example.tugende',
   );
+
 }

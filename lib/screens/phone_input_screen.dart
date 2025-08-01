@@ -18,7 +18,7 @@ class PhoneInputScreen extends ConsumerStatefulWidget {
 
 class _PhoneInputScreenState extends ConsumerState<PhoneInputScreen> {
   final TextEditingController _phoneController = TextEditingController();
-  String _selectedCountryCode = '+250'; // Default: Rwanda
+  String _selectedCountryCode = '+250'; //Rwanda
   bool _agreedToTerms = false;
 
   final Map<String, String> _countryCodes = {
@@ -27,7 +27,7 @@ class _PhoneInputScreenState extends ConsumerState<PhoneInputScreen> {
     '+27': '🇿🇦', '+1': '🇺🇸', '+44': '🇬🇧',
   };
 
-  // Required scopes for Google Sign-In
+  // Required scopes for Google Sign-In requires dddreal device testing.
   // 'openid' is often implicitly included or required for idToken.
   // static const List<String> _scopes = <String>[
   //   'email',
