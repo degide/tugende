@@ -497,7 +497,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       }
       return;
     }
-      // Get authentication details from the signed-in Google user
+      // Get authentication details from the signed-in Google user 
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
       
       // Create a Firebase credential using the Google ID token and access token
@@ -506,7 +506,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         idToken: googleAuth.idToken,
       );
 
-      // Sign in to Firebase with the Google credential
+      // Sign-in to Firebase with the Google credential 
       final userCredential = await auth.signInWithCredential(credential);
       
       if (userCredential.user != null) {
