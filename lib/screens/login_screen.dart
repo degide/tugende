@@ -116,10 +116,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
-  /// Builds the header section of the login screen
+  /// Builds the header section of the login screen 
   Widget _buildHeader() => const SizedBox(height: 20);
 
-  /// Builds the title section with welcome message and taxi icon
+  /// Builds the title section with welcome message and taxi icon.
   Widget _buildTitleSection() {
     return Row(
       children: [
@@ -152,7 +152,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
-  /// Builds the toggle switch for selecting identifier type
+  /// Builds the toggle switch for selecting identifier type.
   Widget _buildIdentifierToggle() {
     return Container(
       decoration: BoxDecoration(
